@@ -14,15 +14,8 @@ class FilmController extends Controller
         return FilmResource::collection([
             ...Film::whereNotNull('cover')
                    ->whereNotNull('release_date')
-                   ->where('cinema_status', '!=', FilmCinemaStatus::Published)
                    ->inRandomOrder()
                    ->take(40)
-                   ->get(),
-            ...Film::whereNotNull('cover')
-                   ->whereNotNull('release_date')
-                   ->where('cinema_status', FilmCinemaStatus::Published)
-                   ->inRandomOrder()
-                   ->take(20)
                    ->get()
         ]);
     }
