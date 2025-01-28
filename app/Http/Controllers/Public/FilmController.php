@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Enums\FilmCinemaStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Public\FilmResource;
 use App\Models\Film;
