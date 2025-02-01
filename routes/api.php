@@ -14,7 +14,6 @@ Route::prefix('management')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::apiSingleton('profile', Management\ProfileController::class)->only(['show']);
         Route::apiResource('films', Management\FilmController::class)->except(['show']);
-        Route::apiResource('films.ratings', Management\RatingController::class)->except(['show']);
         Route::apiResource('films.persons', Management\FilmPersonController::class)->except(['show']);
         Route::apiResource('film-watchers', Management\FilmWatcherController::class)->except(['show']);
         Route::get('film-watchers/by-film/{film}', [Management\FilmWatcherController::class, 'byFilm']);

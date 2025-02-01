@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Management;
 
 use App\Enums\FilmFormat;
+use App\Enums\FilmModerationStatus;
 use App\Enums\PersonRole;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Management\FilmResource;
@@ -73,38 +74,17 @@ class FilmController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'          => 'required|string|max:255',
-            'original_name' => 'nullable|string|max:255',
-            'format'        => ['required', Rule::enum(FilmFormat::class)],
-            'cover'         => 'nullable|image|max:10240',
-            'release_date'  => 'nullable|date',
-            'description'   => 'nullable|string|max:65536',
-            'genres'        => 'nullable|array|exists:genres,id',
-            'countries'     => 'nullable|array|exists:countries,id',
-            'tags'          => 'nullable|array|exists:tags,id',
-            'companies'     => 'nullable|array|exists:companies,id'
+            'name'   => 'required|string|max:255',
+            'format' => ['required', Rule::enum(FilmFormat::class)]
         ]);
-
-        if ($request->hasFile('cover')) {
-            $data['cover'] = $request->file('cover')->store('films', 'public');
-        }
 
         $film = Film::create([
             ...$data,
-            'author_id' => $request->user()->id
+            'author_id'         => $request->user()->id,
+            'moderation_status' => FilmModerationStatus::Draft
         ]);
 
-        if ($data['genres'] ?? false)
-            $film->genres()->sync($data['genres']);
-
-        if ($data['countries'] ?? false)
-            $film->countries()->sync($data['countries']);
-
-        if ($data['tags'] ?? false)
-            $film->tags()->sync($data['tags']);
-
-        if ($data['companies'] ?? false)
-            $film->companies()->sync($data['companies']);
+        return new FilmResource($film);
     }
 
     public function show(Film $film)
@@ -116,6 +96,9 @@ class FilmController extends Controller
 
     public function update(Request $request, Film $film)
     {
+        if ($request->user()->cannot('update', $film))
+            abort(403);
+
         $data = $request->validate([
             'name'          => 'required|string|max:255',
             'original_name' => 'nullable|string|max:255',
@@ -143,8 +126,11 @@ class FilmController extends Controller
         $film->save();
     }
 
-    public function destroy(Film $film)
+    public function destroy(Request $request, Film $film)
     {
+        if ($request->user()->cannot('delete', $film))
+            abort(403);
+
         $film->delete();
     }
 }

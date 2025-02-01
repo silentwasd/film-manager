@@ -15,12 +15,18 @@ class FilmPersonController extends Controller
     public function index(Film $film)
     {
         return FilmPersonResource::collection(
-            $film->people()->orderBy('order_id')->get()
+            $film->people()
+                 ->orderBy('order_id')
+                 ->with('person')
+                 ->get()
         );
     }
 
     public function store(Request $request, Film $film)
     {
+        if ($request->user()->cannot('create', [FilmPerson::class, $film]))
+            abort(403);
+
         $data = $request->validate([
             'person_id'    => 'required|exists:people,id',
             'role'         => ['required', Rule::enum(PersonRole::class)],
@@ -35,6 +41,9 @@ class FilmPersonController extends Controller
 
     public function update(Request $request, Film $film, FilmPerson $person)
     {
+        if ($request->user()->cannot('update', $person))
+            abort(403);
+
         $data = $request->validate([
             'role'         => ['required', Rule::enum(PersonRole::class)],
             'role_details' => 'nullable|string|max:255'
@@ -43,8 +52,11 @@ class FilmPersonController extends Controller
         $person->update($data);
     }
 
-    public function destroy(Film $film, FilmPerson $person)
+    public function destroy(Request $request, Film $film, FilmPerson $person)
     {
+        if ($request->user()->cannot('delete', $person))
+            abort(403);
+
         $person->delete();
     }
 }

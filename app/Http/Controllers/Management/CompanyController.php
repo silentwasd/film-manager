@@ -58,6 +58,9 @@ class CompanyController extends Controller
 
     public function update(Request $request, Company $company)
     {
+        if ($request->user()->cannot('update', $company))
+            abort(403);
+
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:65536',
@@ -67,8 +70,11 @@ class CompanyController extends Controller
         $company->update($data);
     }
 
-    public function destroy(Company $company)
+    public function destroy(Request $request, Company $company)
     {
+        if ($request->user()->cannot('delete', $company))
+            abort(403);
+
         $company->delete();
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\FilmCinemaStatus;
 use App\Enums\FilmFormat;
+use App\Enums\FilmModerationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,13 +19,15 @@ class Film extends Model
         'release_date',
         'description',
         'format',
-        'author_id'
+        'author_id',
+        'moderation_status'
     ];
 
     protected $casts = [
-        'release_date'  => 'immutable_datetime',
-        'format'        => FilmFormat::class,
-        'cinema_status' => FilmCinemaStatus::class
+        'release_date'      => 'immutable_datetime',
+        'format'            => FilmFormat::class,
+        'cinema_status'     => FilmCinemaStatus::class,
+        'moderation_status' => FilmModerationStatus::class
     ];
 
     public function ratings(): HasMany

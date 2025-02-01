@@ -92,6 +92,9 @@ class PersonController extends Controller
 
     public function update(Request $request, Person $person)
     {
+        if ($request->user()->cannot('update', $person))
+            abort(403);
+
         $data = $request->validate([
             'name'          => 'required|string|max:255',
             'original_name' => 'nullable|string|max:255',
@@ -111,8 +114,11 @@ class PersonController extends Controller
         $person->update($data);
     }
 
-    public function destroy(Person $person)
+    public function destroy(Request $request, Person $person)
     {
+        if ($request->user()->cannot('delete', $person))
+            abort(403);
+
         $person->delete();
     }
 }

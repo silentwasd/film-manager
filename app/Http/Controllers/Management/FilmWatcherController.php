@@ -144,6 +144,9 @@ class FilmWatcherController extends Controller
 
     public function update(Request $request, FilmWatcher $filmWatcher)
     {
+        if ($request->user()->cannot('update', $filmWatcher))
+            abort(403);
+
         $data = $request->validate([
             'status' => ['required', Rule::enum(FilmWatchStatus::class)]
         ]);
@@ -151,8 +154,11 @@ class FilmWatcherController extends Controller
         $filmWatcher->update($data);
     }
 
-    public function destroy(FilmWatcher $filmWatcher)
+    public function destroy(Request $request, FilmWatcher $filmWatcher)
     {
+        if ($request->user()->cannot('delete', $filmWatcher))
+            abort(403);
+
         $filmWatcher->delete();
     }
 }
