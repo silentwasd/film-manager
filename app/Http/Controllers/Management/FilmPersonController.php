@@ -16,7 +16,9 @@ class FilmPersonController extends Controller
     {
         return FilmPersonResource::collection(
             $film->people()
+                 ->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'screenwriter', 'operator', 'artist', 'editor', 'composer', 'sound-director', 'dubbing-director', 'dubbing-actor', 'translator')")
                  ->orderBy('order_id')
+                 ->orderBy('id')
                  ->with('person')
                  ->get()
         );
@@ -45,6 +47,7 @@ class FilmPersonController extends Controller
             abort(403);
 
         $data = $request->validate([
+            'person_id'    => 'required|exists:people,id',
             'role'         => ['required', Rule::enum(PersonRole::class)],
             'role_details' => 'nullable|string|max:255'
         ]);

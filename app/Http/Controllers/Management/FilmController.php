@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Management;
 
 use App\Enums\FilmFormat;
 use App\Enums\FilmModerationStatus;
-use App\Enums\PersonRole;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Management\FilmResource;
 use App\Models\Film;
@@ -12,6 +11,7 @@ use App\Services\ComposableTable\Paginable;
 use App\Services\ComposableTable\Searchable;
 use App\Services\ComposableTable\Sortable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -89,7 +89,9 @@ class FilmController extends Controller
 
     public function show(Film $film)
     {
-        $film->load(['ratings', 'people', 'people.person', 'genres', 'countries', 'tags', 'companies']);
+        $film->load(['ratings', 'genres', 'countries', 'tags', 'companies'])
+             ->load(['people' => fn(HasMany $has) => $has->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'screenwriter', 'operator', 'artist', 'editor', 'composer', 'sound-director', 'dubbing-director', 'dubbing-actor', 'translator')")])
+             ->load('people.person');
 
         return new FilmResource($film);
     }
