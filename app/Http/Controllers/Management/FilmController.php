@@ -90,7 +90,7 @@ class FilmController extends Controller
     public function show(Film $film)
     {
         $film->load(['ratings', 'genres', 'countries', 'tags', 'companies'])
-             ->load(['people' => fn(HasMany $has) => $has->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'screenwriter', 'operator', 'artist', 'editor', 'composer', 'sound-director', 'dubbing-director', 'dubbing-actor', 'translator')")])
+             ->load(['people' => fn(HasMany $has) => $has->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'dubbing-director', 'translator', 'dubbing-actor', 'screenwriter', 'operator', 'composer', 'sound-director', 'artist', 'editor')")])
              ->load('people.person');
 
         return new FilmResource($film);

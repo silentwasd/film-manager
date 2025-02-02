@@ -16,7 +16,7 @@ class FilmPersonController extends Controller
     {
         return FilmPersonResource::collection(
             $film->people()
-                 ->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'screenwriter', 'operator', 'artist', 'editor', 'composer', 'sound-director', 'dubbing-director', 'dubbing-actor', 'translator')")
+                 ->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'dubbing-director', 'translator', 'dubbing-actor', 'screenwriter', 'operator', 'composer', 'sound-director', 'artist', 'editor')")
                  ->orderBy('order_id')
                  ->orderBy('id')
                  ->with('person')
