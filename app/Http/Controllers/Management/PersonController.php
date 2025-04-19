@@ -12,6 +12,7 @@ use App\Services\ComposableTable\Searchable;
 use App\Services\ComposableTable\Sortable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class PersonController extends Controller
@@ -51,7 +52,9 @@ class PersonController extends Controller
                            ->whereIn('id', is_array($data['model_id']) ? $data['model_id'] : [$data['model_id']], ($data['name'] ?? false) ? 'OR' : 'AND')
                        )
                        ->with(['country', 'films'])
-                       ->withCount('films');
+                       ->withCount(['films as films_count' => function ($query) {
+                           $query->select(DB::raw('count(distinct film_id)'));
+                       }]);
 
         $this->applySort($data, $query);
 
