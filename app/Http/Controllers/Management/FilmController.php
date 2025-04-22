@@ -91,7 +91,10 @@ class FilmController extends Controller
     {
         $film->load([
             'ratings', 'genres', 'countries', 'tags', 'companies',
-            'people' => fn(HasMany $has) => $has->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'dubbing-director', 'translator', 'dubbing-actor', 'screenwriter', 'operator', 'composer', 'sound-director', 'artist', 'editor')"),
+            'people' => fn(HasMany $has) => $has
+                ->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'dubbing-director', 'translator', 'dubbing-actor', 'screenwriter', 'operator', 'composer', 'sound-director', 'artist', 'editor')")
+                ->orderBy('order_id')
+                ->orderBy('id'),
             'people.person'
         ]);
 
