@@ -16,15 +16,15 @@ class FilmController extends Controller
             'page' => 'nullable|integer|min:1'
         ]);
 
-        return FilmResource::collection([
-            ...Film::whereNotNull('cover')
-                   ->whereNotNull('release_date')
-                   ->where('release_date', '<=', now())
-                   ->when($data['name'] ?? false, fn($when) => $when
-                       ->where('name', 'like', "%{$data['name']}%")
-                   )
-                   ->orderByDesc('release_date')
-                   ->paginate(perPage: 50, page: $data['page'] ?? 1)
-        ]);
+        return FilmResource::collection(
+            Film::whereNotNull('cover')
+                ->whereNotNull('release_date')
+                ->where('release_date', '<=', now())
+                ->when($data['name'] ?? false, fn($when) => $when
+                    ->where('name', 'like', "%{$data['name']}%")
+                )
+                ->orderByDesc('release_date')
+                ->paginate(perPage: 50, page: $data['page'] ?? 1)
+        );
     }
 }
