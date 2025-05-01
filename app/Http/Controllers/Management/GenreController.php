@@ -9,6 +9,7 @@ use App\Services\ComposableTable\Paginable;
 use App\Services\ComposableTable\Searchable;
 use App\Services\ComposableTable\Sortable;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class GenreController extends Controller
 {
@@ -45,7 +46,15 @@ class GenreController extends Controller
     public function update(Request $request, Genre $genre)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255'
+            'name'        => 'required|string|max:255',
+            'slug'        => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('genres', 'slug')->ignore($genre)
+            ],
+            'description' => 'nullable|string|max:512',
+            'icon'        => 'nullable|string|max:255'
         ]);
 
         $genre->update($data);

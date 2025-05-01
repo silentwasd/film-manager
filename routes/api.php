@@ -43,6 +43,8 @@ Route::prefix('management')->group(function () {
 });
 
 Route::apiResource('films', Public\FilmController::class)->only(['index']);
+Route::get('genre/{genre:slug}', [Public\GenreController::class, 'show']);
+
 Route::get('sitemap', [Public\SitemapController::class, 'index']);
 Route::get('speed', [Public\SpeedController::class, 'index']);
 
