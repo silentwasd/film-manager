@@ -24,6 +24,7 @@ class FilmController extends Controller
                     ->where('name', 'like', "%{$data['name']}%")
                 )
                 ->orderByDesc('produced_year')
+                ->orderBy('id')
                 ->paginate(perPage: 50, page: $data['page'] ?? 1)
         );
     }
