@@ -22,11 +22,13 @@ class GenreController extends Controller
             ...$this->checkPage(),
             ...$this->checkSort([
                 'id',
-                'name'
+                'name',
+                'films_count'
             ])
         ]);
 
-        $query = Genre::query();
+        $query = Genre::query()
+                      ->withCount('films');
 
         $this->applySearch($data, $query);
         $this->applySort($data, $query);

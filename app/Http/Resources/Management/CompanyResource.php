@@ -18,7 +18,8 @@ class CompanyResource extends JsonResource
             'description' => $this->description,
             'link'        => $this->link,
             'can_edit'    => $request->user() && ($request->user()->role == UserRole::Admin || $this->author_id == $request->user()->id),
-            'films'       => FilmResource::collection($this->whenLoaded('films'))
+            'films'       => FilmResource::collection($this->whenLoaded('films')),
+            'films_count' => $this->whenCounted('films')
         ];
     }
 }

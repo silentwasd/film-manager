@@ -16,7 +16,8 @@ class GenreResource extends JsonResource
             'name'        => $this->name,
             'slug'        => $this->slug,
             'icon'        => $this->icon,
-            'description' => $this->description
+            'description' => $this->description,
+            'films_count' => $this->whenCounted('films')
         ];
     }
 }

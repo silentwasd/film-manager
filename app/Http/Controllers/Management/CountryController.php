@@ -21,11 +21,14 @@ class CountryController extends Controller
             ...$this->checkPage(),
             ...$this->checkSort([
                 'id',
-                'name'
+                'name',
+                'films_count',
+                'people_count'
             ])
         ]);
 
-        $query = Country::query();
+        $query = Country::query()
+                        ->withCount('films', 'people');
 
         $this->applySearch($data, $query);
         $this->applySort($data, $query);

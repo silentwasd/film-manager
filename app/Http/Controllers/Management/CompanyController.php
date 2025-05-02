@@ -21,11 +21,13 @@ class CompanyController extends Controller
             ...$this->checkPage(),
             ...$this->checkSort([
                 'id',
-                'name'
+                'name',
+                'films_count'
             ])
         ]);
 
-        $query = Company::query();
+        $query = Company::query()
+                        ->withCount('films');
 
         $this->applySearch($data, $query);
         $this->applySort($data, $query);
