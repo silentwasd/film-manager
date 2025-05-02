@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Public\FilmResource;
 use App\Models\Film;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class FilmController extends Controller
@@ -20,8 +21,9 @@ class FilmController extends Controller
             Film::whereNotNull('cover')
                 ->whereNotNull('produced_year')
                 ->where('produced_year', '<=', now()->year)
-                ->when($data['name'] ?? false, fn($when) => $when
-                    ->where('name', 'like', "%{$data['name']}%")
+                ->when($data['name'] ?? false, fn(Builder $when) => $when
+                    ->where('name', 'LIKE', '%' . $data['name'] . '%')
+                    ->orWhere('original_name', 'LIKE', '%' . $data['name'] . '%')
                 )
                 ->orderByDesc('produced_year')
                 ->orderBy('id')
