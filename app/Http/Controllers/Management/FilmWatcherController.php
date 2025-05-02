@@ -29,7 +29,7 @@ class FilmWatcherController extends Controller
                 'id',
                 'film.name',
                 'film.format',
-                'film.release_date'
+                'film.produced_year'
             ]),
             'watch_status' => ['nullable', Rule::enum(FilmWatchStatus::class)],
             'reaction'     => ['nullable', 'integer', 'min:-1', 'max:1'],
@@ -97,28 +97,28 @@ class FilmWatcherController extends Controller
     protected function sort(Builder $query, string $column, string $direction): Builder
     {
         return match ($column) {
-            'film.name'         => $query->with('film')
-                                         ->orderBy(
-                                             Film::select('name')
-                                                 ->whereColumn('films.id', 'film_watchers.film_id')
-                                                 ->limit(1),
-                                             $direction
-                                         ),
-            'film.format'       => $query->with('film')
-                                         ->orderBy(
-                                             Film::select('format')
-                                                 ->whereColumn('films.id', 'film_watchers.film_id')
-                                                 ->limit(1),
-                                             $direction
-                                         ),
-            'film.release_date' => $query->with('film')
-                                         ->orderBy(
-                                             Film::select('release_date')
-                                                 ->whereColumn('films.id', 'film_watchers.film_id')
-                                                 ->limit(1),
-                                             $direction
-                                         ),
-            default             => $query->orderBy($column, $direction),
+            'film.name'          => $query->with('film')
+                                          ->orderBy(
+                                              Film::select('name')
+                                                  ->whereColumn('films.id', 'film_watchers.film_id')
+                                                  ->limit(1),
+                                              $direction
+                                          ),
+            'film.format'        => $query->with('film')
+                                          ->orderBy(
+                                              Film::select('format')
+                                                  ->whereColumn('films.id', 'film_watchers.film_id')
+                                                  ->limit(1),
+                                              $direction
+                                          ),
+            'film.produced_year' => $query->with('film')
+                                          ->orderBy(
+                                              Film::select('produced_year')
+                                                  ->whereColumn('films.id', 'film_watchers.film_id')
+                                                  ->limit(1),
+                                              $direction
+                                          ),
+            default              => $query->orderBy($column, $direction),
         };
     }
 
