@@ -16,6 +16,7 @@ class FilmResource extends JsonResource
             'name'          => $this->name,
             'format'        => $this->format,
             'cover'         => $this->cover,
+            'produced_year' => $this->produced_year,
             'release_date'  => $this->release_date?->format('Y'),
             'description'   => $this->description,
             'cinema_status' => $this->cinema_status
