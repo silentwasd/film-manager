@@ -28,7 +28,7 @@ class FilmController extends Controller
                 'id',
                 'name',
                 'format',
-                'release_date'
+                'produced_year'
             ]),
             'format'    => ['nullable', Rule::enum(FilmFormat::class)],
             'people'    => ['nullable', 'array', 'exists:people,id'],
@@ -111,6 +111,7 @@ class FilmController extends Controller
             'original_name' => 'nullable|string|max:255',
             'format'        => ['required', Rule::enum(FilmFormat::class)],
             'cover'         => 'nullable|image|max:10240',
+            'produced_year' => 'nullable|integer|min:0|max:2100',
             'release_date'  => 'nullable|date',
             'description'   => 'nullable|string|max:65536',
             'genres'        => 'nullable|array|exists:genres,id',

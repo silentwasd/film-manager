@@ -18,12 +18,12 @@ class FilmController extends Controller
 
         return FilmResource::collection(
             Film::whereNotNull('cover')
-                ->whereNotNull('release_date')
-                ->where('release_date', '<=', now())
+                ->whereNotNull('produced_year')
+                ->where('produced_year', '<=', now()->year)
                 ->when($data['name'] ?? false, fn($when) => $when
                     ->where('name', 'like', "%{$data['name']}%")
                 )
-                ->orderByDesc('release_date')
+                ->orderByDesc('produced_year')
                 ->paginate(perPage: 50, page: $data['page'] ?? 1)
         );
     }

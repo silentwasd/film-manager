@@ -18,8 +18,8 @@ class GenreResource extends JsonResource
             'films'       => FilmResource::collection(
                 $this->films()
                      ->whereNotNull('cover')
-                     ->whereNotNull('release_date')
-                     ->orderByDesc('release_date')
+                     ->whereNotNull('produced_year')
+                     ->orderByDesc('produced_year')
                      ->get()
             )
         ];
