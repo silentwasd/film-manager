@@ -92,6 +92,12 @@ class PersonController extends Controller
                ->loadCount('films');
 
         $genres = Genre::whereHas('films.people', fn($q) => $q->where('person_id', $person->id))
+                       ->withCount([
+                           'films as film_count' => fn($q) => $q->whereHas('people', fn($q2) => $q2
+                               ->where('person_id', $person->id)
+                           )
+                       ])
+                       ->orderByDesc('film_count')
                        ->get();
 
         return (new PersonResource($person))->additional(['genres' => $genres]);
