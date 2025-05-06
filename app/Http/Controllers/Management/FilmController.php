@@ -107,23 +107,30 @@ class FilmController extends Controller
             abort(403);
 
         $data = $request->validate([
-            'name'          => 'required|string|max:255',
-            'original_name' => 'nullable|string|max:255',
-            'format'        => ['required', Rule::enum(FilmFormat::class)],
-            'cover'         => 'nullable|image|max:10240',
-            'produced_year' => 'nullable|integer|min:0|max:2100',
-            'release_date'  => 'nullable|date',
-            'description'   => 'nullable|string|max:65536',
-            'genres'        => 'nullable|array|exists:genres,id',
-            'countries'     => 'nullable|array|exists:countries,id',
-            'tags'          => 'nullable|array|exists:tags,id',
-            'companies'     => 'nullable|array|exists:companies,id'
+            'name'             => 'required|string|max:255',
+            'original_name'    => 'nullable|string|max:255',
+            'format'           => ['required', Rule::enum(FilmFormat::class)],
+            'cover'            => 'nullable|image|max:10240',
+            'background_cover' => 'nullable|image|max:10240',
+            'produced_year'    => 'nullable|integer|min:0|max:2100',
+            'release_date'     => 'nullable|date',
+            'description'      => 'nullable|string|max:65536',
+            'genres'           => 'nullable|array|exists:genres,id',
+            'countries'        => 'nullable|array|exists:countries,id',
+            'tags'             => 'nullable|array|exists:tags,id',
+            'companies'        => 'nullable|array|exists:companies,id'
         ]);
 
         if ($request->hasFile('cover')) {
             $data['cover'] = $request->file('cover')->store('films', 'public');
         } else {
             $data['cover'] = $film->cover;
+        }
+
+        if ($request->hasFile('background_cover')) {
+            $data['background_cover'] = $request->file('background_cover')->store('films-bg', 'public');
+        } else {
+            $data['background_cover'] = $film->background_cover;
         }
 
         $film->fill($data);

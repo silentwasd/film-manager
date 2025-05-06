@@ -16,6 +16,7 @@ class Film extends Model
         'name',
         'original_name',
         'cover',
+        'background_cover',
         'produced_year',
         'release_date',
         'description',

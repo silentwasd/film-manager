@@ -6,6 +6,7 @@ use App\Enums\PersonRole;
 use App\Enums\PersonSex;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Management\PersonResource;
+use App\Models\Genre;
 use App\Models\Person;
 use App\Services\ComposableTable\Paginable;
 use App\Services\ComposableTable\Searchable;
@@ -90,7 +91,10 @@ class PersonController extends Controller
         $person->load(['films', 'films.film', 'country'])
                ->loadCount('films');
 
-        return new PersonResource($person);
+        $genres = Genre::whereHas('films.people', fn($q) => $q->where('person_id', $person->id))
+                       ->get();
+
+        return (new PersonResource($person))->additional(['genres' => $genres]);
     }
 
     public function update(Request $request, Person $person)
