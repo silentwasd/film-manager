@@ -34,7 +34,7 @@ class FeedbackController extends Controller
 
         if (!($data['create'] ?? false) && !($data['text'] ?? false) && ($data['reaction'] ?? 0) == 0) {
             abort(400, 'Укажите реакцию или напишите отзыв.');
-        } elseif (($data['create'] ?? false) && $data['reaction'] == 0) {
+        } elseif (($data['create'] ?? false) && ($data['reaction'] ?? 0) == 0) {
             $removed = $user->feedbacks()->where('film_id', $film->id)->whereNull('text')->delete();
             if ($removed)
                 return;
