@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Film extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'original_name',
@@ -24,14 +25,14 @@ class Film extends Model
         'description',
         'format',
         'author_id',
-        'moderation_status'
+        'moderation_status',
     ];
 
     protected $casts = [
-        'release_date'      => 'immutable_datetime',
-        'format'            => FilmFormat::class,
-        'cinema_status'     => FilmCinemaStatus::class,
-        'moderation_status' => FilmModerationStatus::class
+        'release_date' => 'immutable_datetime',
+        'format' => FilmFormat::class,
+        'cinema_status' => FilmCinemaStatus::class,
+        'moderation_status' => FilmModerationStatus::class,
     ];
 
     public function ratings(): HasMany
@@ -52,21 +53,6 @@ class Film extends Model
     public function people(): HasMany
     {
         return $this->hasMany(FilmPerson::class);
-    }
-
-    public function download(): BelongsTo
-    {
-        return $this->belongsTo(Download::class);
-    }
-
-    public function audioVariants(): HasMany
-    {
-        return $this->hasMany(FilmAudioVariant::class);
-    }
-
-    public function videoVariants(): HasMany
-    {
-        return $this->hasMany(FilmVideoVariant::class);
     }
 
     public function feedbacks(): HasMany

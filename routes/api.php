@@ -25,16 +25,16 @@ Route::prefix('management')->group(function () {
         Route::get('tags', [Management\TagController::class, 'index']);
 
         Route::middleware(AdminMiddleware::class)
-             ->apiResource('genres', Management\GenreController::class)
-             ->except(['show', 'index']);
+            ->apiResource('genres', Management\GenreController::class)
+            ->except(['show', 'index']);
 
         Route::middleware(AdminMiddleware::class)
-             ->apiResource('countries', Management\CountryController::class)
-             ->except(['show', 'index']);
+            ->apiResource('countries', Management\CountryController::class)
+            ->except(['show', 'index']);
 
         Route::middleware(AdminMiddleware::class)
-             ->apiResource('tags', Management\TagController::class)
-             ->except(['show', 'index']);
+            ->apiResource('tags', Management\TagController::class)
+            ->except(['show', 'index']);
     });
 
     Route::apiResource('films', Management\FilmController::class)->only(['show']);
@@ -46,7 +46,6 @@ Route::apiResource('films', Public\FilmController::class)->only(['index']);
 Route::get('genre/{genre:slug}', [Public\GenreController::class, 'show']);
 
 Route::get('sitemap', [Public\SitemapController::class, 'index']);
-Route::get('speed', [Public\SpeedController::class, 'index']);
 
 Route::prefix('films/{film}/feedback')->group(function () {
     Route::get('', [FeedbackController::class, 'index']);
