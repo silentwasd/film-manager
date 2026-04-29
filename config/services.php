@@ -39,8 +39,4 @@ return [
         'downloads' => env('TRANSMISSION_DOWNLOADS'),
     ],
 
-    'movie' => [
-        'storage_url' => env('MOVIE_STORAGE_URL')
-    ]
-
 ];
