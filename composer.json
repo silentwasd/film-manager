@@ -9,7 +9,6 @@
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
-        "transmission-php/transmission-php": "^2.2",
         "ext-simplexml": "*"
     },
     "require-dev": {
