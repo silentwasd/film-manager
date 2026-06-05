@@ -11,12 +11,13 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
+        'kotonet_id',
         'name',
         'email',
-        'password'
+        'password',
     ];
 
     protected $hidden = [
@@ -26,8 +27,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
-        'role'              => UserRole::class
+        'password' => 'hashed',
+        'role' => UserRole::class,
     ];
 
     public function films(): HasMany

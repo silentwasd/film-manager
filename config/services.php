@@ -39,4 +39,11 @@ return [
         'downloads' => env('TRANSMISSION_DOWNLOADS'),
     ],
 
+    'kotonet' => [
+        'client_id' => env('KOTONET_CLIENT_ID'),
+        'client_secret' => env('KOTONET_CLIENT_SECRET'),
+        'redirect' => env('KOTONET_REDIRECT_URI'),
+        'base_url' => env('KOTONET_BASE_URL'),
+    ],
+
 ];
