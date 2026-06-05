@@ -20,6 +20,12 @@ Route::prefix('management')->group(function () {
         Route::apiResource('people', Management\PersonController::class)->except(['show']);
         Route::apiResource('companies', Management\CompanyController::class)->except(['show']);
 
+        Route::apiResource('collections', Management\CollectionController::class);
+        Route::post('collections/{collection}/films', [Management\CollectionFilmController::class, 'store']);
+        Route::put('collections/{collection}/films/reorder', [Management\CollectionFilmController::class, 'reorder']);
+        Route::patch('collections/{collection}/films/{film}', [Management\CollectionFilmController::class, 'update']);
+        Route::delete('collections/{collection}/films/{film}', [Management\CollectionFilmController::class, 'destroy']);
+
         Route::get('genres', [Management\GenreController::class, 'index']);
         Route::get('countries', [Management\CountryController::class, 'index']);
         Route::get('tags', [Management\TagController::class, 'index']);

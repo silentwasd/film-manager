@@ -40,4 +40,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Feedback::class);
     }
+
+    public function collections(): HasMany
+    {
+        return $this->hasMany(Collection::class);
+    }
 }
