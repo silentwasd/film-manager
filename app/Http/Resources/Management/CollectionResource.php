@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Management;
 
+use App\Enums\CollectionVisibility;
 use App\Models\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -15,11 +16,11 @@ class CollectionResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'is_public' => $this->is_public,
+            'visibility' => $this->visibility,
             'public_key' => $this->public_key,
             'public_url' => $this->when(
-                $this->is_public,
-                fn () => config('app.frontend_url').'/collections/'.$this->public_key
+                $this->visibility !== CollectionVisibility::Hidden,
+                fn () => $this->publicUrl()
             ),
             'films_count' => $this->whenCounted('films'),
             'films' => CollectionFilmResource::collection($this->whenLoaded('films')),

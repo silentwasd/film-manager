@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Management;
 
+use App\Enums\CollectionVisibility;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Management\CollectionResource;
 use App\Models\Collection;
@@ -9,6 +10,7 @@ use App\Services\ComposableTable\Paginable;
 use App\Services\ComposableTable\Searchable;
 use App\Services\ComposableTable\Sortable;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CollectionController extends Controller
 {
@@ -24,6 +26,7 @@ class CollectionController extends Controller
 
         $query = $request->user()
             ->collections()
+            ->with('user')
             ->withCount('films')
             ->getQuery();
 
@@ -40,7 +43,10 @@ class CollectionController extends Controller
             abort(403);
         }
 
-        $collection->load(['films' => fn ($q) => $q->with('film', 'film.people', 'film.people.person')->orderBy('position')]);
+        $collection->load([
+            'user',
+            'films' => fn ($q) => $q->with('film', 'film.people', 'film.people.person')->orderBy('position'),
+        ]);
 
         return new CollectionResource($collection);
     }
@@ -50,6 +56,10 @@ class CollectionController extends Controller
         $data = $request->validate($this->rules());
 
         $collection = $request->user()->collections()->create($data);
+
+        // Связь нужна, чтобы собрать вложенный путь личной коллекции,
+        // и она уже под рукой — лишний запрос ни к чему.
+        $collection->setRelation('user', $request->user());
 
         return new CollectionResource($collection);
     }
@@ -64,18 +74,20 @@ class CollectionController extends Controller
 
         $collection->update($data);
 
+        $collection->setRelation('user', $request->user());
+
         return new CollectionResource($collection);
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     private function rules(): array
     {
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
-            'is_public' => 'sometimes|boolean',
+            'visibility' => ['sometimes', Rule::enum(CollectionVisibility::class)],
         ];
     }
 

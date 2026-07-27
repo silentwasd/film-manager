@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CollectionVisibility;
 use App\Models\Collection;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -17,12 +18,22 @@ class CollectionFactory extends Factory
             'user_id' => User::factory(),
             'name' => $this->faker->words(3, true),
             'description' => null,
-            'is_public' => false,
+            'visibility' => CollectionVisibility::Hidden,
         ];
     }
 
     public function public(): static
     {
-        return $this->state(fn () => ['is_public' => true]);
+        return $this->state(fn () => ['visibility' => CollectionVisibility::Public]);
+    }
+
+    public function personal(): static
+    {
+        return $this->state(fn () => ['visibility' => CollectionVisibility::Personal]);
+    }
+
+    public function hidden(): static
+    {
+        return $this->state(fn () => ['visibility' => CollectionVisibility::Hidden]);
     }
 }

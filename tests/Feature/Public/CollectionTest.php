@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Public;
 
+use App\Enums\CollectionVisibility;
 use App\Models\Collection;
 use App\Models\CollectionFilm;
 use App\Models\Film;
@@ -20,21 +21,31 @@ class CollectionTest extends TestCase
         $this->getJson('/api/collections/'.$collection->id.'-luchshie-boeviki')
             ->assertOk()
             ->assertJsonPath('data.id', $collection->id)
-            ->assertJsonPath('data.name', 'Лучшие боевики');
+            ->assertJsonPath('data.name', 'Лучшие боевики')
+            ->assertJsonPath('data.visibility', CollectionVisibility::Public->value);
     }
 
-    public function test_show_returns_404_for_private_collection(): void
+    public function test_show_returns_404_for_personal_collection_on_short_url(): void
     {
-        $collection = Collection::factory()->create(['is_public' => false]);
+        $collection = Collection::factory()->personal()->create(['name' => 'Личная подборка']);
+
+        // У личной коллекции единственный адрес — внутри профиля автора.
+        $this->getJson('/api/collections/'.$collection->public_key)
+            ->assertNotFound();
+    }
+
+    public function test_show_returns_404_for_hidden_collection(): void
+    {
+        $collection = Collection::factory()->hidden()->create();
 
         $this->getJson('/api/collections/'.$collection->public_key)
             ->assertNotFound();
     }
 
-    public function test_show_returns_404_for_owner_of_private_collection(): void
+    public function test_show_returns_404_for_owner_of_hidden_collection(): void
     {
         $user = User::factory()->create();
-        $collection = Collection::factory()->create(['user_id' => $user->id, 'is_public' => false]);
+        $collection = Collection::factory()->hidden()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)
             ->getJson('/api/collections/'.$collection->public_key)
@@ -57,7 +68,7 @@ class CollectionTest extends TestCase
             ->assertJsonPath('data.name', 'Новое имя');
     }
 
-    public function test_show_returns_author_and_films_in_position_order(): void
+    public function test_show_returns_author_link_and_films_in_position_order(): void
     {
         $user = User::factory()->create(['name' => 'Иван']);
         $collection = Collection::factory()->public()->create(['user_id' => $user->id]);
@@ -79,7 +90,8 @@ class CollectionTest extends TestCase
 
         $this->getJson('/api/collections/'.$collection->public_key)
             ->assertOk()
-            ->assertJsonPath('data.author', 'Иван')
+            ->assertJsonPath('data.author.name', 'Иван')
+            ->assertJsonPath('data.author.public_key', $user->id.'-ivan')
             ->assertJsonPath('data.films_count', 2)
             ->assertJsonPath('data.films.0.film.name', 'Первый')
             ->assertJsonPath('data.films.1.film.name', 'Второй');

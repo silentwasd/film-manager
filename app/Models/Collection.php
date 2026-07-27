@@ -2,35 +2,35 @@
 
 namespace App\Models;
 
+use App\Enums\CollectionVisibility;
+use App\Models\Concerns\HasPublicKey;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
 class Collection extends Model
 {
-    use HasFactory;
+    use HasFactory, HasPublicKey;
 
     protected $fillable = [
         'user_id',
         'name',
         'description',
-        'is_public',
+        'visibility',
     ];
 
     protected $casts = [
-        'is_public' => 'boolean',
+        'visibility' => CollectionVisibility::class,
     ];
 
     /**
      * Дублирует дефолт из миграции, иначе только что созданная модель отдаёт
-     * is_public = null до перечитывания из БД.
+     * visibility = null до перечитывания из БД.
      */
     protected $attributes = [
-        'is_public' => false,
+        'visibility' => CollectionVisibility::Hidden->value,
     ];
 
     public function user(): BelongsTo
@@ -43,40 +43,38 @@ class Collection extends Model
         return $this->hasMany(CollectionFilm::class);
     }
 
+    /** Только то, что индексируется: страница + профиль + sitemap. */
     public function scopePublic(Builder $query): Builder
     {
-        return $query->where('is_public', true);
+        return $query->where('visibility', CollectionVisibility::Public);
+    }
+
+    /** Всё, что вообще видно не владельцу: публичные и личные. */
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->whereIn('visibility', CollectionVisibility::visible());
     }
 
     /**
-     * Декоративная часть публичной ссылки. Не хранится: ключом остаётся id,
-     * поэтому переименование коллекции не ломает уже разосланные ссылки.
+     * Единственный адрес страницы для данного уровня доступа. Публичная живёт
+     * на коротком пути, личная — внутри профиля автора; второго адреса ни у
+     * той, ни у другой нет, чужой путь отдаёт 404.
+     *
+     * Для личной нужна загруженная связь user.
      */
-    protected function slug(): Attribute
+    public function publicPath(): ?string
     {
-        return Attribute::get(fn () => Str::slug($this->name, '-', 'ru'));
+        return match ($this->visibility) {
+            CollectionVisibility::Public => '/collections/'.$this->public_key,
+            CollectionVisibility::Personal => '/users/'.$this->user->public_key.'/collections/'.$this->public_key,
+            CollectionVisibility::Hidden => null,
+        };
     }
 
-    /**
-     * Ключ публичной страницы вида "12-luchshie-boeviki".
-     * Названия без латинской транслитерации (иероглифы, эмодзи) дают пустой
-     * слаг — тогда ключом остаётся голый id.
-     */
-    protected function publicKey(): Attribute
+    public function publicUrl(): ?string
     {
-        return Attribute::get(fn () => $this->slug === ''
-            ? (string) $this->id
-            : $this->id.'-'.$this->slug);
-    }
+        $path = $this->publicPath();
 
-    /**
-     * Извлекает id из ключа публичной страницы. Слаг игнорируется —
-     * он существует только для читаемости ссылки.
-     */
-    public static function idFromPublicKey(string $key): ?int
-    {
-        return preg_match('/^(\d+)/', $key, $matches) === 1
-            ? (int) $matches[1]
-            : null;
+        return $path === null ? null : config('app.frontend_url').$path;
     }
 }

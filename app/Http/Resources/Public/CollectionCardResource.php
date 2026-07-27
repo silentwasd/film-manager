@@ -6,8 +6,12 @@ use App\Models\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin Collection */
-class CollectionResource extends JsonResource
+/**
+ * Коллекция в списке профиля: без фильмов, только карточка со ссылкой.
+ *
+ * @mixin Collection
+ */
+class CollectionCardResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
@@ -17,13 +21,8 @@ class CollectionResource extends JsonResource
             'description' => $this->description,
             'public_key' => $this->public_key,
             'visibility' => $this->visibility,
-            'path' => $this->whenLoaded('user', fn () => $this->publicPath()),
-            'author' => $this->whenLoaded('user', fn () => [
-                'name' => $this->user->name,
-                'public_key' => $this->user->public_key,
-            ]),
+            'path' => $this->publicPath(),
             'films_count' => $this->whenCounted('films'),
-            'films' => CollectionFilmResource::collection($this->whenLoaded('films')),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

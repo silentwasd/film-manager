@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Management;
 
+use App\Enums\CollectionVisibility;
 use App\Models\Collection;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class CollectionTest extends TestCase
@@ -173,18 +175,21 @@ class CollectionTest extends TestCase
             ->assertForbidden();
     }
 
-    // --- публикация ---
+    // --- видимость ---
 
-    public function test_store_creates_private_collection_by_default(): void
+    public function test_store_creates_hidden_collection_by_default(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->postJson('/api/management/collections', ['name' => 'Боевики'])
             ->assertCreated()
-            ->assertJsonPath('data.is_public', false);
+            ->assertJsonPath('data.visibility', CollectionVisibility::Hidden->value);
 
-        $this->assertDatabaseHas('collections', ['name' => 'Боевики', 'is_public' => false]);
+        $this->assertDatabaseHas('collections', [
+            'name' => 'Боевики',
+            'visibility' => CollectionVisibility::Hidden->value,
+        ]);
     }
 
     public function test_store_creates_public_collection_with_description(): void
@@ -195,48 +200,59 @@ class CollectionTest extends TestCase
             ->postJson('/api/management/collections', [
                 'name' => 'Лучшие боевики',
                 'description' => 'Подборка на вечер',
-                'is_public' => true,
+                'visibility' => CollectionVisibility::Public->value,
             ])
             ->assertCreated()
-            ->assertJsonPath('data.is_public', true)
+            ->assertJsonPath('data.visibility', CollectionVisibility::Public->value)
             ->assertJsonPath('data.description', 'Подборка на вечер');
-
-        $this->assertDatabaseHas('collections', ['name' => 'Лучшие боевики', 'is_public' => true]);
     }
 
-    public function test_update_publishes_private_collection(): void
+    public function test_store_creates_personal_collection(): void
     {
         $user = User::factory()->create();
-        $collection = Collection::factory()->create(['user_id' => $user->id, 'is_public' => false]);
+
+        $this->actingAs($user)
+            ->postJson('/api/management/collections', [
+                'name' => 'Любимое',
+                'visibility' => CollectionVisibility::Personal->value,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.visibility', CollectionVisibility::Personal->value);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function visibilityProvider(): array
+    {
+        return [
+            'public' => [CollectionVisibility::Public->value],
+            'personal' => [CollectionVisibility::Personal->value],
+            'hidden' => [CollectionVisibility::Hidden->value],
+        ];
+    }
+
+    #[DataProvider('visibilityProvider')]
+    public function test_update_switches_visibility_to(string $visibility): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->personal()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)
             ->putJson("/api/management/collections/{$collection->id}", [
                 'name' => $collection->name,
-                'is_public' => true,
+                'visibility' => $visibility,
             ])
             ->assertOk()
-            ->assertJsonPath('data.is_public', true);
+            ->assertJsonPath('data.visibility', $visibility);
 
-        $this->assertDatabaseHas('collections', ['id' => $collection->id, 'is_public' => true]);
+        $this->assertDatabaseHas('collections', [
+            'id' => $collection->id,
+            'visibility' => $visibility,
+        ]);
     }
 
-    public function test_update_unpublishes_public_collection(): void
-    {
-        $user = User::factory()->create();
-        $collection = Collection::factory()->public()->create(['user_id' => $user->id]);
-
-        $this->actingAs($user)
-            ->putJson("/api/management/collections/{$collection->id}", [
-                'name' => $collection->name,
-                'is_public' => false,
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.is_public', false);
-
-        $this->assertDatabaseHas('collections', ['id' => $collection->id, 'is_public' => false]);
-    }
-
-    public function test_update_keeps_visibility_when_flag_is_omitted(): void
+    public function test_update_keeps_visibility_when_field_is_omitted(): void
     {
         $user = User::factory()->create();
         $collection = Collection::factory()->public()->create(['user_id' => $user->id]);
@@ -244,42 +260,116 @@ class CollectionTest extends TestCase
         $this->actingAs($user)
             ->putJson("/api/management/collections/{$collection->id}", ['name' => 'Новое имя'])
             ->assertOk()
-            ->assertJsonPath('data.is_public', true);
+            ->assertJsonPath('data.visibility', CollectionVisibility::Public->value);
     }
 
-    public function test_publish_forbidden_for_other_user(): void
+    public function test_update_rejects_unknown_visibility(): void
     {
         $user = User::factory()->create();
-        $collection = Collection::factory()->create(['is_public' => false]);
+        $collection = Collection::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)
             ->putJson("/api/management/collections/{$collection->id}", [
                 'name' => $collection->name,
-                'is_public' => true,
+                'visibility' => 'everyone',
+            ])
+            ->assertUnprocessable();
+    }
+
+    public function test_changing_visibility_forbidden_for_other_user(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->hidden()->create();
+
+        $this->actingAs($user)
+            ->putJson("/api/management/collections/{$collection->id}", [
+                'name' => $collection->name,
+                'visibility' => CollectionVisibility::Public->value,
             ])
             ->assertForbidden();
 
-        $this->assertDatabaseHas('collections', ['id' => $collection->id, 'is_public' => false]);
+        $this->assertDatabaseHas('collections', [
+            'id' => $collection->id,
+            'visibility' => CollectionVisibility::Hidden->value,
+        ]);
     }
 
-    public function test_public_url_is_exposed_only_for_published_collections(): void
+    public function test_public_url_points_to_short_address_for_public_collection(): void
     {
         $user = User::factory()->create();
-        $private = Collection::factory()->create(['user_id' => $user->id, 'name' => 'Скрытая']);
-        $published = Collection::factory()->public()->create(['user_id' => $user->id, 'name' => 'Открытая']);
+        $collection = Collection::factory()->public()->create(['user_id' => $user->id, 'name' => 'Открытая']);
 
         $this->actingAs($user)
-            ->getJson("/api/management/collections/{$private->id}")
-            ->assertOk()
-            ->assertJsonMissingPath('data.public_url');
-
-        $this->actingAs($user)
-            ->getJson("/api/management/collections/{$published->id}")
+            ->getJson("/api/management/collections/{$collection->id}")
             ->assertOk()
             ->assertJsonPath(
                 'data.public_url',
-                config('app.frontend_url').'/collections/'.$published->id.'-otkrytaya'
+                config('app.frontend_url').'/collections/'.$collection->id.'-otkrytaya'
             );
+    }
+
+    public function test_public_url_points_inside_profile_for_personal_collection(): void
+    {
+        $user = User::factory()->create(['name' => 'Иван']);
+        $collection = Collection::factory()->personal()->create(['user_id' => $user->id, 'name' => 'Личная']);
+
+        $this->actingAs($user)
+            ->getJson("/api/management/collections/{$collection->id}")
+            ->assertOk()
+            ->assertJsonPath(
+                'data.public_url',
+                config('app.frontend_url').'/users/'.$user->id.'-ivan/collections/'.$collection->id.'-lichnaya'
+            );
+    }
+
+    public function test_public_url_is_absent_for_hidden_collection(): void
+    {
+        $user = User::factory()->create();
+        $collection = Collection::factory()->hidden()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->getJson("/api/management/collections/{$collection->id}")
+            ->assertOk()
+            ->assertJsonMissingPath('data.public_url');
+    }
+
+    public function test_public_url_follows_visibility_change_in_index(): void
+    {
+        $user = User::factory()->create(['name' => 'Иван']);
+        $collection = Collection::factory()->personal()->create(['user_id' => $user->id, 'name' => 'Подборка']);
+
+        $this->actingAs($user)
+            ->getJson('/api/management/collections')
+            ->assertOk()
+            ->assertJsonPath(
+                'data.0.public_url',
+                config('app.frontend_url').'/users/'.$user->id.'-ivan/collections/'.$collection->id.'-podborka'
+            );
+
+        $this->actingAs($user)
+            ->putJson("/api/management/collections/{$collection->id}", [
+                'name' => 'Подборка',
+                'visibility' => CollectionVisibility::Public->value,
+            ])
+            ->assertOk()
+            ->assertJsonPath(
+                'data.public_url',
+                config('app.frontend_url').'/collections/'.$collection->id.'-podborka'
+            );
+    }
+
+    public function test_index_returns_collections_of_every_visibility(): void
+    {
+        $user = User::factory()->create();
+
+        Collection::factory()->public()->create(['user_id' => $user->id]);
+        Collection::factory()->personal()->create(['user_id' => $user->id]);
+        Collection::factory()->hidden()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->getJson('/api/management/collections')
+            ->assertOk()
+            ->assertJsonCount(3, 'data');
     }
 
     public function test_description_too_long_is_rejected(): void
