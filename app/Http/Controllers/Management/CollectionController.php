@@ -47,9 +47,7 @@ class CollectionController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $data = $request->validate($this->rules());
 
         $collection = $request->user()->collections()->create($data);
 
@@ -62,13 +60,23 @@ class CollectionController extends Controller
             abort(403);
         }
 
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $data = $request->validate($this->rules());
 
         $collection->update($data);
 
         return new CollectionResource($collection);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'is_public' => 'sometimes|boolean',
+        ];
     }
 
     public function destroy(Request $request, Collection $collection)

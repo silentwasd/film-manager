@@ -16,6 +16,13 @@ class CollectionFactory extends Factory
         return [
             'user_id' => User::factory(),
             'name' => $this->faker->words(3, true),
+            'description' => null,
+            'is_public' => false,
         ];
+    }
+
+    public function public(): static
+    {
+        return $this->state(fn () => ['is_public' => true]);
     }
 }

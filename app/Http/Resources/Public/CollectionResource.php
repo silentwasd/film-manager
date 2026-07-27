@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Management;
+namespace App\Http\Resources\Public;
 
 use App\Models\Collection;
 use Illuminate\Http\Request;
@@ -15,15 +15,11 @@ class CollectionResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'is_public' => $this->is_public,
             'public_key' => $this->public_key,
-            'public_url' => $this->when(
-                $this->is_public,
-                fn () => config('app.frontend_url').'/collections/'.$this->public_key
-            ),
+            'author' => $this->whenLoaded('user', fn () => $this->user->name),
             'films_count' => $this->whenCounted('films'),
             'films' => CollectionFilmResource::collection($this->whenLoaded('films')),
-            'can_edit' => auth()->user()->can('update', $this->resource),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

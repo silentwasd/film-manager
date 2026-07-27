@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Models\Collection;
 use App\Models\Company;
 use App\Models\Film;
 use App\Models\Person;
@@ -43,6 +44,16 @@ class SitemapController extends Controller
                 $url->addChild('loc', config('app.frontend_url') . '/catalog/companies/' . $company->id);
                 $url->addChild('lastmod', $company->updated_at->format('Y-m-d'));
                 $url->addChild('changefreq', 'daily');
+                $url->addChild('priority', 1);
+            }
+
+            $collections = Collection::query()->public()->get();
+
+            foreach ($collections as $collection) {
+                $url = $xml->addChild('url');
+                $url->addChild('loc', config('app.frontend_url') . '/collections/' . $collection->public_key);
+                $url->addChild('lastmod', $collection->updated_at->format('Y-m-d'));
+                $url->addChild('changefreq', 'weekly');
                 $url->addChild('priority', 1);
             }
 
