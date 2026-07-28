@@ -13,6 +13,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::prefix('management')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::apiSingleton('profile', Management\ProfileController::class)->only(['show']);
+        Route::post('films/import/shikimori', [Management\ShikimoriImportController::class, 'store']);
         Route::apiResource('films', Management\FilmController::class)->except(['show']);
         Route::apiResource('films.persons', Management\FilmPersonController::class)->except(['show']);
         Route::apiResource('film-watchers', Management\FilmWatcherController::class)->except(['show']);

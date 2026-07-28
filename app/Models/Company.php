@@ -13,7 +13,8 @@ class Company extends Model
         'name',
         'description',
         'link',
-        'author_id'
+        'author_id',
+        'shikimori_id'
     ];
 
     public function films(): BelongsToMany

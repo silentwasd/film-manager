@@ -19,7 +19,8 @@ class Person extends Model
         'sex',
         'photo',
         'author_id',
-        'country_id'
+        'country_id',
+        'shikimori_id'
     ];
 
     protected $casts = [
