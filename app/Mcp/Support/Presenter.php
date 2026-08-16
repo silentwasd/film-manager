@@ -133,17 +133,39 @@ class Presenter
     }
 
     /**
+     * Реакция и отзыв лежат не в `film_watchers`, а в `feedback`, и приезжают
+     * только если вызывающий код загрузил связь, ограничив её текущим
+     * пользователем. Без этого ключей в ответе не будет вовсе — это честнее,
+     * чем показать «нет реакции» там, где её просто не спрашивали.
+     *
      * @return array<string, mixed>
      */
     public static function watcher(FilmWatcher $watcher): array
     {
-        return [
+        $result = [
             'film' => $watcher->relationLoaded('film') && $watcher->film
                 ? self::filmCard($watcher->film)
                 : ['id' => $watcher->film_id],
             'status' => $watcher->status,
             'updated_at' => $watcher->updated_at?->format('Y-m-d'),
         ];
+
+        if (! $watcher->relationLoaded('film') || ! $watcher->film?->relationLoaded('feedbacks')) {
+            return $result;
+        }
+
+        $feedback = $watcher->film->feedbacks->first();
+
+        // null и 0 — разные вещи: null это «не оценивал», а 0 — поставленная
+        // нейтральная оценка, ни за, ни против. Ключ есть всегда, когда связь
+        // загружена, иначе отсутствие оценки не отличить от незагруженных данных.
+        $result['reaction'] = $feedback === null ? null : (int) $feedback->reaction;
+
+        if ($feedback?->text !== null && $feedback->text !== '') {
+            $result['review'] = $feedback->text;
+        }
+
+        return $result;
     }
 
     /**

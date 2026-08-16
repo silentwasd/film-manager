@@ -92,6 +92,137 @@ class PersonalToolsTest extends TestCase
             ->assertDontSee('Досмотрен');
     }
 
+    public function test_watchlist_carries_reaction_and_review(): void
+    {
+        $user = User::factory()->create();
+        $film = Film::factory()->create(['name' => 'Другой мир']);
+
+        FilmWatcher::factory()->create([
+            'watcher_id' => $user->id,
+            'film_id' => $film->id,
+            'status' => 'watched',
+        ]);
+
+        Feedback::query()->create([
+            'user_id' => $user->id,
+            'film_id' => $film->id,
+            'reaction' => 1,
+            'text' => 'Кайф',
+        ]);
+
+        // Ради этого всё и затевалось: оценка должна быть видна в списке,
+        // без похода в get_film за каждым фильмом.
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetWatchlist::class, [])
+            ->assertOk()
+            ->assertSee(['"reaction":1', '"review":"Кайф"']);
+    }
+
+    public function test_watchlist_hides_reactions_of_other_users(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $film = Film::factory()->create();
+
+        FilmWatcher::factory()->create(['watcher_id' => $user->id, 'film_id' => $film->id]);
+
+        Feedback::query()->create([
+            'user_id' => $other->id,
+            'film_id' => $film->id,
+            'reaction' => 1,
+            'text' => 'Чужой отзыв',
+        ]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetWatchlist::class, [])
+            ->assertOk()
+            ->assertDontSee('Чужой отзыв')
+            ->assertSee('"reaction":null');
+    }
+
+    public function test_watchlist_tells_neutral_rating_from_no_rating(): void
+    {
+        $user = User::factory()->create();
+
+        $neutral = Film::factory()->create(['name' => 'Оценён нейтрально']);
+        $unrated = Film::factory()->create(['name' => 'Не оценён вовсе']);
+
+        foreach ([$neutral, $unrated] as $film) {
+            FilmWatcher::factory()->create(['watcher_id' => $user->id, 'film_id' => $film->id]);
+        }
+
+        // Ноль — поставленная оценка «ни за ни против», а не её отсутствие,
+        // поэтому запись в feedback есть и хранит отзыв.
+        Feedback::query()->create([
+            'user_id' => $user->id,
+            'film_id' => $neutral->id,
+            'reaction' => 0,
+            'text' => 'Ни то ни сё',
+        ]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetWatchlist::class, ['reaction' => 0])
+            ->assertOk()
+            ->assertSee('Оценён нейтрально')
+            ->assertDontSee('Не оценён вовсе');
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetWatchlist::class, ['rated' => false])
+            ->assertOk()
+            ->assertSee('Не оценён вовсе')
+            ->assertDontSee('Оценён нейтрально');
+    }
+
+    public function test_watchlist_filters_by_reaction_and_review(): void
+    {
+        $user = User::factory()->create();
+
+        $liked = Film::factory()->create(['name' => 'Понравился']);
+        $disliked = Film::factory()->create(['name' => 'Не понравился']);
+
+        foreach ([$liked, $disliked] as $film) {
+            FilmWatcher::factory()->create(['watcher_id' => $user->id, 'film_id' => $film->id]);
+        }
+
+        Feedback::query()->create(['user_id' => $user->id, 'film_id' => $liked->id, 'reaction' => 1, 'text' => 'Отлично']);
+        Feedback::query()->create(['user_id' => $user->id, 'film_id' => $disliked->id, 'reaction' => -1]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetWatchlist::class, ['reaction' => 1])
+            ->assertOk()
+            ->assertSee('Понравился')
+            ->assertDontSee('Не понравился');
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetWatchlist::class, ['has_review' => true])
+            ->assertOk()
+            ->assertSee('Понравился')
+            ->assertDontSee('Не понравился');
+    }
+
+    public function test_get_film_distinguishes_neutral_rating_from_none(): void
+    {
+        $user = User::factory()->create();
+        $film = Film::factory()->create();
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetFilm::class, ['id' => $film->id])
+            ->assertOk()
+            ->assertSee('"reaction":null');
+
+        Feedback::query()->create([
+            'user_id' => $user->id,
+            'film_id' => $film->id,
+            'reaction' => 0,
+            'text' => 'Нейтрально',
+        ]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetFilm::class, ['id' => $film->id])
+            ->assertOk()
+            ->assertSee('"reaction":0');
+    }
+
     public function test_set_watch_status_adds_and_then_updates(): void
     {
         $user = User::factory()->create();

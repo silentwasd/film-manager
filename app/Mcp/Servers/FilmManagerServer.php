@@ -48,10 +48,16 @@ use Laravel\Mcp\Server\Attributes\Version;
 из ответов инструментов.
 
 Личные данные. get_watchlist показывает, что пользователь смотрел, бросил или
-собирается посмотреть; статус меняется через set_watch_status. Оценка фильма —
-set_film_reaction (нравится, не нравится, снять), она же кладёт публичный отзыв,
-видимый всем на сайте. add_film_note пишет приватную заметку. Подборки —
-list_collections, get_collection, save_collection, manage_collection_films.
+собирается посмотреть, вместе с его оценкой и отзывом; статус меняется через
+set_watch_status, оценка — через set_film_reaction. add_film_note пишет
+приватную заметку, видимую только автору. Подборки — list_collections,
+get_collection, save_collection, manage_collection_films.
+
+Оценка принимает четыре состояния, и путать их нельзя: 1 — понравилось,
+-1 — не понравилось, 0 — нейтрально (поставленная оценка, ни за ни против),
+null — пользователь фильм не оценивал вовсе. Ноль это не «нет оценки».
+Отзыв и оценка живут вместе и видны на сайте всем; приватная заметка —
+это другое, она в get_film в поле my.notes.
 
 Перед любой записью — set_watch_status, set_film_reaction, add_film_note,
 save_collection, manage_collection_films, удаления — сказать пользователю,

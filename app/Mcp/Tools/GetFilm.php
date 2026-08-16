@@ -57,7 +57,6 @@ class GetFilm extends Tool
 
             $result['my'] = array_filter([
                 'watch_status' => $watcher?->status,
-                'reaction' => $feedback?->reaction,
                 'review' => $feedback?->text,
                 'notes' => $film->ratings()
                     ->where('user_id', $user->getAuthIdentifier())
@@ -71,6 +70,10 @@ class GetFilm extends Tool
                     ->values()
                     ->all() ?: null,
             ], fn ($value) => $value !== null);
+
+            // Отдельно от array_filter выше: null здесь значимый ответ —
+            // «не оценивал», и его нельзя путать с нейтральной оценкой 0.
+            $result['my']['reaction'] = $feedback === null ? null : (int) $feedback->reaction;
         }
 
         return Response::json($result);
