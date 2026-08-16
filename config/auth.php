@@ -40,6 +40,15 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        /*
+         * Гвард MCP-сервера (/mcp). Токены выдаёт Passport по OAuth 2.1,
+         * обычное API живёт на Sanctum и этого гварда не касается.
+         */
+        'mcp' => [
+            'driver' => 'passport',
+            'provider' => 'users',
+        ],
     ],
 
     /*
