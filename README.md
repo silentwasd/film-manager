@@ -36,6 +36,12 @@ Headless REST API на Laravel 13 для управления каталогом
 
 **Требования:** PHP 8.3, MySQL 8.0, Redis 7, Composer, Node.js
 
+Целевая версия PHP зафиксирована в `composer.json` через `config.platform.php`.
+Composer подбирает зависимости под неё, а не под ту, что стоит у разработчика, —
+иначе на машине с PHP 8.5 в lock приезжает Symfony 8.1 (требует 8.4.1+),
+и на боевом сервере `composer install` падает. Меняется версия на сервере —
+меняется и это значение, следом `composer update`.
+
 ```bash
 git clone https://github.com/silentwasd/film-manager.git
 cd film-manager
