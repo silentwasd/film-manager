@@ -40,6 +40,14 @@ class KinopoiskImporter
     ];
 
     /**
+     * Страны, которые Кинопоиск пишет иначе, чем справочник каталога.
+     */
+    protected const array COUNTRY_ALIASES = [
+        'корея южная'   => 'Южная Корея',
+        'корея северная' => 'Северная Корея',
+    ];
+
+    /**
      * «Жанры», которые на самом деле формат — он уже учтён в format.
      */
     protected const array FORMAT_GENRES = ['мультфильм'];
@@ -217,6 +225,7 @@ class KinopoiskImporter
             if (!($name = trim($name)))
                 continue;
 
+            $name    = self::COUNTRY_ALIASES[mb_strtolower($name)] ?? $name;
             $country = Country::whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first();
 
             if (!$country) {
