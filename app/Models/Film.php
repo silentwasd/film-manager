@@ -5,12 +5,15 @@ namespace App\Models;
 use App\Enums\FilmCinemaStatus;
 use App\Enums\FilmFormat;
 use App\Enums\FilmModerationStatus;
+use App\Observers\FilmCoverObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(FilmCoverObserver::class)]
 class Film extends Model
 {
     use HasFactory;
@@ -19,6 +22,7 @@ class Film extends Model
         'name',
         'original_name',
         'cover',
+        'cover_thumb',
         'background_cover',
         'produced_year',
         'release_date',
