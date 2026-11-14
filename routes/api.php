@@ -21,6 +21,7 @@ Route::prefix('management')->group(function () {
         Route::apiResource('film-watchers', Management\FilmWatcherController::class)->except(['show']);
         Route::get('film-watchers/by-film/{film}', [Management\FilmWatcherController::class, 'byFilm']);
         Route::apiResource('people', Management\PersonController::class)->except(['show']);
+        Route::get('companies/{company}/watch-statuses', [Management\CompanyController::class, 'watchStatuses']);
         Route::apiResource('companies', Management\CompanyController::class)->except(['show']);
 
         Route::apiResource('collections', Management\CollectionController::class);

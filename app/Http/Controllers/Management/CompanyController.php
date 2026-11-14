@@ -58,6 +58,24 @@ class CompanyController extends Controller
         return new CompanyResource($company);
     }
 
+    /**
+     * Статусы просмотра текущего пользователя по тайтлам студии — для отметок
+     * на таймлайне. Отдельно от show: show публичный и кэшируется одинаково
+     * для всех, а статусы у каждого свои.
+     *
+     * @return array{data: array<int, string>} film_id => статус
+     */
+    public function watchStatuses(Request $request, Company $company)
+    {
+        $statuses = $request->user()
+                            ->films()
+                            ->whereIn('film_id', $company->films()->select('films.id'))
+                            ->pluck('status', 'film_id')
+                            ->map(fn($status) => $status->value ?? $status);
+
+        return response()->json(['data' => (object)$statuses->all()]);
+    }
+
     public function update(Request $request, Company $company)
     {
         if ($request->user()->cannot('update', $company))
