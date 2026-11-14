@@ -56,6 +56,8 @@ Route::prefix('management')->group(function () {
 });
 
 Route::apiResource('films', Public\FilmController::class)->only(['index']);
+Route::get('home', [Public\HomeController::class, 'index']);
+Route::get('home/random', [Public\HomeController::class, 'random']);
 Route::get('genre/{genre:slug}', [Public\GenreController::class, 'show']);
 Route::get('collections/{key}', [Public\CollectionController::class, 'show']);
 Route::get('users/{key}', [Public\UserController::class, 'show']);
