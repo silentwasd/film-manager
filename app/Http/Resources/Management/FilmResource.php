@@ -19,6 +19,7 @@ class FilmResource extends JsonResource
             'name'             => $this->name,
             'original_name'    => $this->original_name,
             'format'           => $this->format,
+            'seasons'          => $this->seasons,
             'cover'            => $this->cover,
             'cover_thumb'      => $this->cover_thumb,
             'background_cover' => $this->background_cover,

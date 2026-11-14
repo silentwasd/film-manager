@@ -70,6 +70,7 @@ class Presenter
         return [
             ...self::filmCard($film),
             'release_date' => $film->release_date?->format('Y-m-d'),
+            'seasons' => $film->seasons,
             'description' => $film->description,
             'cover' => self::image($film->cover),
             'background_cover' => self::image($film->background_cover),

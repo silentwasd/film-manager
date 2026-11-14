@@ -28,6 +28,7 @@ class Film extends Model
         'release_date',
         'description',
         'format',
+        'seasons',
         'author_id',
         'moderation_status',
         'shikimori_id',
@@ -37,6 +38,7 @@ class Film extends Model
     protected $casts = [
         'release_date' => 'immutable_datetime',
         'format' => FilmFormat::class,
+        'seasons' => 'integer',
         'cinema_status' => FilmCinemaStatus::class,
         'moderation_status' => FilmModerationStatus::class,
     ];
@@ -61,7 +63,19 @@ class Film extends Model
         return $this->hasMany(FilmPerson::class);
     }
 
+    /**
+     * Отзывы на тайтл целиком — без отзывов на отдельные сезоны. Именно они
+     * считаются в лайках, топе главной и оценке в «Моих фильмах».
+     */
     public function feedbacks(): HasMany
+    {
+        return $this->hasMany(Feedback::class)->whereNull('season');
+    }
+
+    /**
+     * Все отзывы: на тайтл целиком и на сезоны.
+     */
+    public function allFeedbacks(): HasMany
     {
         return $this->hasMany(Feedback::class);
     }

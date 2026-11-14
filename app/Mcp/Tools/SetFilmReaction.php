@@ -21,6 +21,9 @@ use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
     'оценка, а не её отсутствие; правда, если нейтральную оценку ставят без '.
     'отзыва, запись удаляется — так же ведёт себя кнопка на сайте. '.
     'Вместе с оценкой можно оставить публичный отзыв до 512 символов. '.
+    'У сериала с указанным числом сезонов (seasons в get_film) можно оценить '.
+    'отдельный сезон параметром season; без него оценка ставится сериалу '.
+    'целиком. Оценки сезонов и общая независимы — у каждого своя запись. '.
     'Отзыв виден на сайте всем — писать только то, что пользователь сам '.
     'продиктовал, и подтвердить у него текст.'
 )]
@@ -33,11 +36,21 @@ class SetFilmReaction extends Tool
             'film_id' => 'required|integer|exists:films,id',
             'reaction' => 'required|integer|min:-1|max:1',
             'review' => 'nullable|string|max:512',
+            'season' => 'nullable|integer|min:1',
         ]);
 
         $user = $request->user();
         $film = Film::query()->findOrFail($data['film_id']);
         $review = $data['review'] ?? null;
+        $season = $data['season'] ?? null;
+
+        if ($season !== null && (! $film->format?->isSerial() || ! $film->seasons)) {
+            return Response::error("У «{$film->name}» не указаны сезоны — оценить можно только тайтл целиком.");
+        }
+
+        if ($season !== null && $season > $film->seasons) {
+            return Response::error("У «{$film->name}» сезонов: {$film->seasons}, сезона {$season} нет.");
+        }
 
         // Нейтральная оценка без отзыва хранить нечего: сайт в этом случае
         // удаляет запись, и повторять его поведение здесь обязательно —
@@ -46,16 +59,21 @@ class SetFilmReaction extends Tool
             $removed = Feedback::query()
                 ->where('user_id', $user->getAuthIdentifier())
                 ->where('film_id', $film->id)
+                ->where('season', $season)
                 ->whereNull('text')
                 ->delete();
 
             if ($removed > 0) {
-                return Response::json(['saved' => true, 'film_id' => $film->id, 'reaction' => null]);
+                return Response::json(array_filter([
+                    'saved' => true,
+                    'film_id' => $film->id,
+                    'season' => $season,
+                ], fn ($value) => $value !== null) + ['reaction' => null]);
             }
         }
 
         $feedback = Feedback::query()->updateOrCreate(
-            ['user_id' => $user->getAuthIdentifier(), 'film_id' => $film->id],
+            ['user_id' => $user->getAuthIdentifier(), 'film_id' => $film->id, 'season' => $season],
             array_filter([
                 'reaction' => $data['reaction'],
                 'text' => $review,
@@ -66,6 +84,7 @@ class SetFilmReaction extends Tool
             'saved' => true,
             'film_id' => $film->id,
             'film' => $film->name,
+            ...($season !== null ? ['season' => $season] : []),
             'reaction' => $feedback->reaction,
             'review' => $feedback->text,
         ]);
@@ -86,6 +105,8 @@ class SetFilmReaction extends Tool
                 ->required(),
             'review' => $schema->string()
                 ->description('Публичный отзыв до 512 символов. Виден всем посетителям сайта.'),
+            'season' => $schema->integer()
+                ->description('Номер сезона сериала, от 1 до seasons из get_film. Не указан — оценка сериала целиком.'),
         ];
     }
 }

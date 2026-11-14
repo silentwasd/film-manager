@@ -524,4 +524,54 @@ class PersonalToolsTest extends TestCase
         $this->assertDatabaseMissing('collections', ['id' => $mine->id]);
         $this->assertDatabaseHas('collections', ['id' => $foreign->id]);
     }
+
+    // --- сезоны ---
+
+    public function test_set_film_reaction_rates_season_separately(): void
+    {
+        $user = User::factory()->create();
+        $film = Film::factory()->create(['format' => 'series', 'seasons' => 3]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(SetFilmReaction::class, ['film_id' => $film->id, 'reaction' => 1, 'review' => 'Сериал в целом хорош.'])
+            ->assertOk();
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(SetFilmReaction::class, ['film_id' => $film->id, 'reaction' => -1, 'season' => 2, 'review' => 'Второй провис.'])
+            ->assertOk()
+            ->assertSee('"season":2');
+
+        $this->assertDatabaseHas('feedback', ['film_id' => $film->id, 'season' => null, 'reaction' => 1]);
+        $this->assertDatabaseHas('feedback', ['film_id' => $film->id, 'season' => 2, 'reaction' => -1]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetFilm::class, ['id' => $film->id])
+            ->assertOk()
+            ->assertSee(['"seasons":3', 'Второй провис.', '"review":"Сериал в целом хорош."']);
+    }
+
+    public function test_set_film_reaction_rejects_unknown_season(): void
+    {
+        $user = User::factory()->create();
+        $film = Film::factory()->create(['format' => 'series', 'seasons' => 2]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(SetFilmReaction::class, ['film_id' => $film->id, 'reaction' => 1, 'season' => 5])
+            ->assertHasErrors();
+
+        $this->assertDatabaseCount('feedback', 0);
+    }
+
+    public function test_watchlist_reaction_ignores_season_reviews(): void
+    {
+        $user = User::factory()->create();
+        $film = Film::factory()->create(['format' => 'series', 'seasons' => 2]);
+        FilmWatcher::factory()->create(['watcher_id' => $user->id, 'film_id' => $film->id, 'status' => 'watched']);
+        Feedback::query()->create(['user_id' => $user->id, 'film_id' => $film->id, 'season' => 1, 'reaction' => 1, 'text' => 'Только первый']);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetWatchlist::class, ['rated' => false])
+            ->assertOk()
+            ->assertSee($film->name);
+    }
 }

@@ -134,7 +134,10 @@ class HomeController extends Controller
      */
     protected function top(): array
     {
+        // Только отзывы на тайтл целиком: оценки отдельных сезонов в топ
+        // не идут, иначе сериал с пятью сезонами набирал бы впятеро больше.
         $scores = Feedback::query()
+            ->whereNull('season')
             ->select('film_id')
             ->selectRaw('SUM(reaction) AS score, SUM(reaction = 1) AS likes')
             ->groupBy('film_id')
@@ -171,6 +174,7 @@ class HomeController extends Controller
                 'id'         => $item->id,
                 'text'       => $item->text,
                 'reaction'   => $item->reaction,
+                'season'     => $item->season,
                 'user'       => $item->user?->name,
                 'updated_at' => $item->updated_at,
                 'film'       => $this->film($item->film),

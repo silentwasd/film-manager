@@ -12,8 +12,13 @@ class Feedback extends Model
     protected $fillable = [
         'film_id',
         'user_id',
+        'season',
         'text',
         'reaction'
+    ];
+
+    protected $casts = [
+        'season' => 'integer',
     ];
 
     public function film(): BelongsTo

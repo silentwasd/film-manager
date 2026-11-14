@@ -112,6 +112,7 @@ class FilmController extends Controller
             'name'             => 'required|string|max:255',
             'original_name'    => 'nullable|string|max:255',
             'format'           => ['required', Rule::enum(FilmFormat::class)],
+            'seasons'          => 'nullable|integer|min:1|max:999',
             'cover'            => 'nullable|image|max:10240',
             'background_cover' => 'nullable|image|max:10240',
             'produced_year'    => 'nullable|integer|min:0|max:2100',
@@ -135,6 +136,12 @@ class FilmController extends Controller
         } else {
             $data['background_cover'] = $film->background_cover;
         }
+
+        // Сезоны бывают только у многосерийных форматов: сменили формат
+        // на фильм — число сезонов теряет смысл. Отзывы на сезоны при этом
+        // остаются в базе как есть.
+        if (!FilmFormat::from($data['format'])->isSerial())
+            $data['seasons'] = null;
 
         $film->fill($data);
         $film->genres()->sync($data['genres'] ?? []);

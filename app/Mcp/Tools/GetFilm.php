@@ -20,7 +20,9 @@ use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 #[Description(
     'Полная карточка фильма по id: описание, жанры, страны, теги, студии, '.
     'участники по ролям, ссылки на постер и на страницу сайта. '.
-    'Дополнительно отдаёт статус просмотра и заметки текущего пользователя.'
+    'Дополнительно отдаёт статус просмотра и заметки текущего пользователя. '.
+    'У сериалов есть seasons — число сезонов; my.reaction и my.review — оценка '.
+    'сериала целиком, а my.seasons — оценки и отзывы на отдельные сезоны.'
 )]
 #[IsReadOnly]
 #[IsIdempotent]
@@ -74,6 +76,23 @@ class GetFilm extends Tool
             // Отдельно от array_filter выше: null здесь значимый ответ —
             // «не оценивал», и его нельзя путать с нейтральной оценкой 0.
             $result['my']['reaction'] = $feedback === null ? null : (int) $feedback->reaction;
+
+            // Отзывы на отдельные сезоны — рядом с общей оценкой, а не вместо неё.
+            $seasons = $film->allFeedbacks()
+                ->where('user_id', $user->getAuthIdentifier())
+                ->whereNotNull('season')
+                ->orderBy('season')
+                ->get()
+                ->map(fn ($item) => array_filter([
+                    'season' => $item->season,
+                    'reaction' => (int) $item->reaction,
+                    'review' => $item->text,
+                ], fn ($value) => $value !== null))
+                ->all();
+
+            if ($seasons) {
+                $result['my']['seasons'] = $seasons;
+            }
         }
 
         return Response::json($result);

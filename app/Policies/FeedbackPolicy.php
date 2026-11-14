@@ -8,9 +8,15 @@ use App\Models\User;
 
 class FeedbackPolicy
 {
-    public function create(User $user, Film $film): bool
+    /**
+     * Один отзыв на тайтл целиком (`$season = null`) и по одному на каждый сезон.
+     */
+    public function create(User $user, Film $film, ?int $season = null): bool
     {
-        return !$user->feedbacks()->where('film_id', $film->id)->exists();
+        return !$user->feedbacks()
+                     ->where('film_id', $film->id)
+                     ->where('season', $season)
+                     ->exists();
     }
 
     public function update(User $user, Feedback $feedback): bool

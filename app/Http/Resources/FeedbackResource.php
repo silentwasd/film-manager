@@ -15,6 +15,7 @@ class FeedbackResource extends JsonResource
         return [
             'id'         => $this->id,
             'user'       => new UserResource($this->whenLoaded('user')),
+            'season'     => $this->season,
             'text'       => $this->text,
             'reaction'   => $this->reaction,
             'created_at' => $this->created_at,
