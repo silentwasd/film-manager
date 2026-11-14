@@ -130,7 +130,7 @@ class HomeController extends Controller
 
     /**
      * Любимое зрителями: лайки минус дизлайки, при равенстве — у кого больше отметок
-     * «просмотрено».
+     * «просмотрено». Девять, а не десять: двузначная цифра за постером не помещается.
      */
     protected function top(): array
     {
@@ -148,7 +148,7 @@ class HomeController extends Controller
             ->orderByDesc('s.score')
             ->orderByDesc('watched_count')
             ->orderByDesc('films.id')
-            ->limit(10)
+            ->limit(9)
             ->get();
 
         return $films->map(fn(Film $film) => $this->film($film) + [
