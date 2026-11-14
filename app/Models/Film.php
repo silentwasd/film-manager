@@ -81,4 +81,9 @@ class Film extends Model
     {
         return $this->belongsToMany(Company::class);
     }
+
+    public function franchises(): BelongsToMany
+    {
+        return $this->belongsToMany(Franchise::class);
+    }
 }

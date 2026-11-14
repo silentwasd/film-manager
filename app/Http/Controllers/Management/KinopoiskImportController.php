@@ -78,6 +78,8 @@ class KinopoiskImportController extends Controller
             'countries.*'            => 'string|max:100',
             'companies'              => 'nullable|array|max:10',
             'companies.*'            => 'string|max:255',
+            'franchises'             => 'nullable|array|max:10',
+            'franchises.*'           => 'string|max:255',
             'people'                 => 'nullable|array|max:200',
             'people.*.kinopoisk_id'  => 'required|integer|min:1',
             'people.*.role'          => ['required', Rule::enum(PersonRole::class)],
@@ -97,7 +99,7 @@ class KinopoiskImportController extends Controller
 
         $result = $this->importer->import($data, $request->user());
 
-        $film = $result['film']->load(['genres', 'countries', 'companies', 'tags']);
+        $film = $result['film']->load(['genres', 'countries', 'companies', 'franchises', 'tags']);
 
         return (new FilmResource($film))
             ->additional(['created' => $result['created'], 'log' => $result['log']])

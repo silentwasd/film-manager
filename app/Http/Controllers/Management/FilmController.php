@@ -38,7 +38,7 @@ class FilmController extends Controller
         ]);
 
         $query = Film::query()
-                     ->with(['people', 'people.person', 'genres', 'countries', 'tags', 'companies']);
+                     ->with(['people', 'people.person', 'genres', 'countries', 'tags', 'companies', 'franchises']);
 
         $query
             ->when($data['format'] ?? false, fn(Builder $when) => $when
@@ -90,7 +90,9 @@ class FilmController extends Controller
     public function show(Film $film)
     {
         $film->load([
-            'ratings', 'genres', 'countries', 'tags', 'companies',
+            'ratings', 'genres', 'countries', 'tags', 'companies', 'franchises',
+            // Соседи по франшизе — для ленты на странице фильма.
+            'franchises.films',
             'people' => fn(HasMany $has) => $has
                 ->orderByRaw("FIELD(role, 'director', 'actor', 'voice-actor', 'producer', 'dubbing-director', 'translator', 'dubbing-actor', 'screenwriter', 'operator', 'composer', 'sound-director', 'artist', 'editor')")
                 ->orderBy('order_id')
@@ -118,7 +120,8 @@ class FilmController extends Controller
             'genres'           => 'nullable|array|exists:genres,id',
             'countries'        => 'nullable|array|exists:countries,id',
             'tags'             => 'nullable|array|exists:tags,id',
-            'companies'        => 'nullable|array|exists:companies,id'
+            'companies'        => 'nullable|array|exists:companies,id',
+            'franchises'       => 'nullable|array|exists:franchises,id'
         ]);
 
         if ($request->hasFile('cover')) {
@@ -138,6 +141,7 @@ class FilmController extends Controller
         $film->countries()->sync($data['countries'] ?? []);
         $film->tags()->sync($data['tags'] ?? []);
         $film->companies()->sync($data['companies'] ?? []);
+        $film->franchises()->sync($data['franchises'] ?? []);
         $film->save();
     }
 

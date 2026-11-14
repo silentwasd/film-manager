@@ -77,6 +77,7 @@ class Presenter
             'countries' => $film->relationLoaded('countries') ? $film->countries->pluck('name')->all() : [],
             'tags' => $film->relationLoaded('tags') ? $film->tags->pluck('name')->all() : [],
             'companies' => $film->relationLoaded('companies') ? $film->companies->pluck('name')->all() : [],
+            'franchises' => $film->relationLoaded('franchises') ? $film->franchises->pluck('name')->all() : [],
             'people' => $film->relationLoaded('people') ? self::filmPeople($film) : [],
         ];
     }

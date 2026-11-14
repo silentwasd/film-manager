@@ -56,7 +56,7 @@ class Fetch extends Tool
     {
         $film = Film::query()
             ->with([
-                'genres', 'countries', 'tags', 'companies',
+                'genres', 'countries', 'tags', 'companies', 'franchises',
                 'people' => fn (HasMany $has) => $has->orderBy('order_id')->orderBy('id'),
                 'people.person',
             ])
@@ -73,6 +73,7 @@ class Fetch extends Tool
             $film->genres->isNotEmpty() ? 'Жанры: '.$film->genres->pluck('name')->join(', ') : null,
             $film->countries->isNotEmpty() ? 'Страны: '.$film->countries->pluck('name')->join(', ') : null,
             $film->companies->isNotEmpty() ? 'Студии: '.$film->companies->pluck('name')->join(', ') : null,
+            $film->franchises->isNotEmpty() ? 'Франшиза: '.$film->franchises->pluck('name')->join(', ') : null,
             $film->tags->isNotEmpty() ? 'Теги: '.$film->tags->pluck('name')->join(', ') : null,
             $this->peopleLine($film),
             $film->description ? "\n".$film->description : null,

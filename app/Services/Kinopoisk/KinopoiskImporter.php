@@ -7,6 +7,7 @@ use App\Enums\FilmModerationStatus;
 use App\Enums\PersonRole;
 use App\Enums\PersonSex;
 use App\Models\Company;
+use App\Models\Franchise;
 use App\Models\Country;
 use App\Models\Film;
 use App\Models\Genre;
@@ -98,11 +99,19 @@ class KinopoiskImporter
         $data      = $this->decodeEntities($data);
 
         if ($existing = Film::where('kinopoisk_id', $data['kinopoisk_id'])->first()) {
-            return [
-                'film'    => $existing,
-                'created' => false,
-                'log'     => ["Уже импортировано — карточка #{$existing->id} «{$existing->name}». Повторный импорт пропущен."]
-            ];
+            $this->note("Уже импортировано — карточка #{$existing->id} «{$existing->name}». Повторный импорт пропущен.");
+
+            // Франшизу можно дописать и уже заведённой карточке: так линейку
+            // собирают из тайтлов, импортированных раньше, без правки руками.
+            // Только добавление — чужие франшизы карточки не трогаются.
+            if ($franchiseIds = $this->franchiseIds($data['franchises'] ?? [], $author)) {
+                $attached = $existing->franchises()->syncWithoutDetaching($franchiseIds)['attached'];
+
+                if ($attached)
+                    $this->note('Карточка добавлена во франшизу.');
+            }
+
+            return ['film' => $existing, 'created' => false, 'log' => $this->log];
         }
 
         // Картинки качаем ДО транзакции: сеть внутри неё держала бы блокировки.
@@ -129,6 +138,7 @@ class KinopoiskImporter
             $film->tags()->sync($tagIds);
             $film->countries()->sync($this->countryIds($data['countries'] ?? []));
             $film->companies()->sync($this->companyIds($data['companies'] ?? [], $author));
+            $film->franchises()->sync($this->franchiseIds($data['franchises'] ?? [], $author));
 
             $this->attachPeople($film, $data['people'] ?? [], $photos, $author);
 
@@ -234,6 +244,27 @@ class KinopoiskImporter
             }
 
             $ids[] = $country->id;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    protected function franchiseIds(array $names, User $author): array
+    {
+        $ids = [];
+
+        foreach ($names as $name) {
+            if (!($name = trim($name)))
+                continue;
+
+            $franchise = Franchise::whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first();
+
+            if (!$franchise) {
+                $franchise = Franchise::create(['name' => $name, 'author_id' => $author->id]);
+                $this->note("Заведена новая франшиза «{$name}».");
+            }
+
+            $ids[] = $franchise->id;
         }
 
         return array_values(array_unique($ids));

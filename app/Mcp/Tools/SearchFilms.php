@@ -47,6 +47,7 @@ class SearchFilms extends Tool
             'tags.*' => 'string|max:255',
             'person' => 'nullable|string|max:255',
             'company' => 'nullable|string|max:255',
+            'franchise' => 'nullable|string|max:255',
             'year_from' => 'nullable|integer|min:1888|max:2100',
             'year_to' => 'nullable|integer|min:1888|max:2100',
             'sort' => 'nullable|string|in:year_desc,year_asc,name,newest',
@@ -100,6 +101,10 @@ class SearchFilms extends Tool
             $query->whereHas('companies', fn (Builder $has) => $has->where('name', 'LIKE', '%'.$company.'%'));
         }
 
+        if ($franchise = $data['franchise'] ?? null) {
+            $query->whereHas('franchises', fn (Builder $has) => $has->where('name', 'LIKE', '%'.$franchise.'%'));
+        }
+
         if ($from = $data['year_from'] ?? null) {
             $query->where('produced_year', '>=', $from);
         }
@@ -146,6 +151,8 @@ class SearchFilms extends Tool
                 ->description('Имя участника: режиссёра, актёра, композитора. Роль не различается.'),
             'company' => $schema->string()
                 ->description('Название студии или компании.'),
+            'franchise' => $schema->string()
+                ->description('Название франшизы — сквозной линейки тайтлов от разных студий, например «Черепашки-ниндзя».'),
             'year_from' => $schema->integer()->description('Год производства не раньше.'),
             'year_to' => $schema->integer()->description('Год производства не позже.'),
             'sort' => $schema->string()

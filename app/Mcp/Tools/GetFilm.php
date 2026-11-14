@@ -34,7 +34,7 @@ class GetFilm extends Tool
 
         $film = Film::query()
             ->with([
-                'genres', 'countries', 'tags', 'companies',
+                'genres', 'countries', 'tags', 'companies', 'franchises',
                 // Тот же порядок ролей, что и на сайте: сначала режиссёр,
                 // потом актёры, дальше остальные.
                 'people' => fn (HasMany $has) => $has

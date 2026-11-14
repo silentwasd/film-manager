@@ -23,6 +23,8 @@ Route::prefix('management')->group(function () {
         Route::apiResource('people', Management\PersonController::class)->except(['show']);
         Route::get('companies/{company}/watch-statuses', [Management\CompanyController::class, 'watchStatuses']);
         Route::apiResource('companies', Management\CompanyController::class)->except(['show']);
+        Route::get('franchises/{franchise}/watch-statuses', [Management\FranchiseController::class, 'watchStatuses']);
+        Route::apiResource('franchises', Management\FranchiseController::class)->except(['show']);
 
         Route::apiResource('collections', Management\CollectionController::class);
         Route::post('collections/{collection}/films', [Management\CollectionFilmController::class, 'store']);
@@ -50,6 +52,7 @@ Route::prefix('management')->group(function () {
     Route::apiResource('films', Management\FilmController::class)->only(['show']);
     Route::apiResource('people', Management\PersonController::class)->only(['show']);
     Route::apiResource('companies', Management\CompanyController::class)->only(['show']);
+    Route::apiResource('franchises', Management\FranchiseController::class)->only(['show']);
 });
 
 Route::apiResource('films', Public\FilmController::class)->only(['index']);

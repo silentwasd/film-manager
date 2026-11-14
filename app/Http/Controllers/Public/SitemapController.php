@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Collection;
 use App\Models\Company;
+use App\Models\Franchise;
 use App\Models\Film;
 use App\Models\Person;
 use Illuminate\Support\Facades\Cache;
@@ -43,6 +44,16 @@ class SitemapController extends Controller
                 $url = $xml->addChild('url');
                 $url->addChild('loc', config('app.frontend_url') . '/catalog/companies/' . $company->id);
                 $url->addChild('lastmod', $company->updated_at->format('Y-m-d'));
+                $url->addChild('changefreq', 'daily');
+                $url->addChild('priority', 1);
+            }
+
+            $franchises = Franchise::all();
+
+            foreach ($franchises as $franchise) {
+                $url = $xml->addChild('url');
+                $url->addChild('loc', config('app.frontend_url') . '/catalog/franchises/' . $franchise->id);
+                $url->addChild('lastmod', $franchise->updated_at->format('Y-m-d'));
                 $url->addChild('changefreq', 'daily');
                 $url->addChild('priority', 1);
             }
