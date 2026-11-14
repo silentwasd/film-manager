@@ -27,6 +27,7 @@ class Film extends Model
         'author_id',
         'moderation_status',
         'shikimori_id',
+        'kinopoisk_id',
     ];
 
     protected $casts = [
