@@ -21,6 +21,12 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'public_key' => $this->public_key,
             'collections' => CollectionCardResource::collection($this->whenLoaded('collections')),
+            // Вошедшему — отношение к этому человеку, от него зависит кнопка
+            // дружбы: self, friends, outgoing, incoming, none.
+            'friendship' => $this->when(
+                $request->user('sanctum') !== null,
+                fn () => $request->user('sanctum')->friendshipStateWith($this->resource)
+            ),
         ];
     }
 }

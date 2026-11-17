@@ -11,6 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // Фронт на другом домене и живёт на Bearer-токенах Sanctum, а не на
+    // сессии — поэтому авторизация приватных каналов в api-группе:
+    // POST /api/broadcasting/auth.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['prefix' => 'api', 'middleware' => ['api', 'auth:sanctum']],
+    )
     ->withMiddleware(function (Middleware $middleware) {
         //
     })

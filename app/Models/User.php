@@ -25,6 +25,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'friend_invite_token',
     ];
 
     protected $casts = [
@@ -46,6 +47,52 @@ class User extends Authenticatable
     public function collections(): HasMany
     {
         return $this->hasMany(Collection::class);
+    }
+
+    /**
+     * id друзей — принятая дружба в любом направлении.
+     *
+     * @return array<int, int>
+     */
+    public function friendIds(): array
+    {
+        return Friendship::query()
+            ->whereNotNull('accepted_at')
+            ->where(fn ($q) => $q->where('user_id', $this->id)->orWhere('friend_id', $this->id))
+            ->get(['user_id', 'friend_id'])
+            ->map(fn (Friendship $f) => $f->user_id == $this->id ? $f->friend_id : $f->user_id)
+            ->values()
+            ->all();
+    }
+
+    public function isFriendWith(User $other): bool
+    {
+        return Friendship::query()->between($this->id, $other->id)->whereNotNull('accepted_at')->exists();
+    }
+
+    /**
+     * Отношение к другому пользователю с точки зрения этого:
+     * self, friends, outgoing (я позвал), incoming (меня позвали), none.
+     */
+    public function friendshipStateWith(User $other): string
+    {
+        if ($other->id == $this->id) {
+            return 'self';
+        }
+
+        $friendship = Friendship::query()->between($this->id, $other->id)->first();
+
+        return match (true) {
+            $friendship === null => 'none',
+            $friendship->isAccepted() => 'friends',
+            $friendship->user_id == $this->id => 'outgoing',
+            default => 'incoming',
+        };
+    }
+
+    public function watchPlans(): BelongsToMany
+    {
+        return $this->belongsToMany(WatchPlan::class, 'watch_plan_user');
     }
 
     /** Чужие коллекции, добавленные к себе. Только закладка, не копия. */

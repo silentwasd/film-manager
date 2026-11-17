@@ -34,6 +34,23 @@ Route::prefix('management')->group(function () {
         Route::patch('collections/{collection}/films/{film}', [Management\CollectionFilmController::class, 'update']);
         Route::delete('collections/{collection}/films/{film}', [Management\CollectionFilmController::class, 'destroy']);
 
+        Route::get('friends', [Management\FriendController::class, 'index']);
+        Route::post('friends', [Management\FriendController::class, 'store']);
+        Route::get('friends/invite', [Management\FriendController::class, 'invite']);
+        Route::post('friends/invite/reset', [Management\FriendController::class, 'resetInvite']);
+        Route::get('friends/invite/{token}', [Management\FriendController::class, 'previewInvite']);
+        Route::post('friends/invite/{token}', [Management\FriendController::class, 'acceptInvite']);
+        Route::post('friends/{user}/accept', [Management\FriendController::class, 'accept']);
+        Route::delete('friends/{user}', [Management\FriendController::class, 'destroy']);
+
+        Route::get('watch-plans', [Management\WatchPlanController::class, 'index']);
+        Route::post('watch-plans', [Management\WatchPlanController::class, 'store']);
+        Route::put('watch-plans/reorder', [Management\WatchPlanController::class, 'reorder']);
+        Route::patch('watch-plans/{watchPlan}', [Management\WatchPlanController::class, 'update']);
+        Route::put('watch-plans/{watchPlan}/status', [Management\WatchPlanController::class, 'status']);
+        Route::delete('watch-plans/{watchPlan}/leave', [Management\WatchPlanController::class, 'leave']);
+        Route::delete('watch-plans/{watchPlan}', [Management\WatchPlanController::class, 'destroy']);
+
         Route::get('genres', [Management\GenreController::class, 'index']);
         Route::get('countries', [Management\CountryController::class, 'index']);
         Route::get('tags', [Management\TagController::class, 'index']);
