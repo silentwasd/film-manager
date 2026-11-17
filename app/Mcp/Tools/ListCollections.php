@@ -19,9 +19,10 @@ use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 #[Name('list_collections')]
 #[Title('Подборки')]
 #[Description(
-    'Список подборок фильмов. scope=mine — свои, включая скрытые; '.
-    'scope=public — публичные подборки всех пользователей. Состав подборки '.
-    'отдаёт get_collection.'
+    'Список подборок фильмов. scope=mine — раздел «Коллекции» пользователя: '.
+    'свои (включая скрытые) и чужие, добавленные к себе (у них is_mine=false — '.
+    'только просмотр). own — только свои, saved — только добавленные чужие, '.
+    'public — публичные подборки всех пользователей. Состав подборки отдаёт get_collection.'
 )]
 #[IsReadOnly]
 #[IsIdempotent]
@@ -30,19 +31,23 @@ class ListCollections extends Tool
     public function handle(Request $request): Response
     {
         $data = $request->validate([
-            'scope' => 'nullable|string|in:mine,public',
+            'scope' => 'nullable|string|in:mine,own,saved,public',
             'query' => 'nullable|string|max:255',
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:50',
         ]);
 
-        $userId = $request->user()->getAuthIdentifier();
+        $user = $request->user();
+        $userId = $user->getAuthIdentifier();
         $scope = $data['scope'] ?? 'mine';
 
         $paginator = Collection::query()
             ->with('user')
             ->withCount('films')
-            ->when($scope === 'mine', fn (Builder $query) => $query->where('user_id', $userId))
+            ->withExists(['savers as saved' => fn (Builder $query) => $query->whereKey($userId)])
+            ->when(in_array($scope, ['mine', 'own', 'saved'], true), fn (Builder $query) => $query->listedFor($user))
+            ->when($scope === 'own', fn (Builder $query) => $query->where('user_id', $userId))
+            ->when($scope === 'saved', fn (Builder $query) => $query->where('user_id', '!=', $userId))
             ->when($scope === 'public', fn (Builder $query) => $query->where('visibility', CollectionVisibility::Public))
             ->when($data['query'] ?? null, fn (Builder $query, string $name) => $query->where('name', 'LIKE', '%'.$name.'%'))
             ->orderByDesc('id')
@@ -50,7 +55,10 @@ class ListCollections extends Tool
 
         return Response::json(Presenter::page(
             $paginator,
-            fn (Collection $collection) => Presenter::collectionCard($collection)
+            fn (Collection $collection) => [
+                ...Presenter::collectionCard($collection),
+                ...Presenter::collectionRelation($collection, $userId),
+            ]
         ));
     }
 
@@ -61,8 +69,11 @@ class ListCollections extends Tool
     {
         return [
             'scope' => $schema->string()
-                ->enum(['mine', 'public'])
-                ->description('mine — подборки пользователя (по умолчанию), public — чужие публичные.'),
+                ->enum(['mine', 'own', 'saved', 'public'])
+                ->description(
+                    'mine — свои и добавленные чужие (по умолчанию), own — только свои, '.
+                    'saved — только добавленные чужие, public — публичные подборки всех.'
+                ),
             'query' => $schema->string()->description('Часть названия подборки.'),
             'page' => $schema->integer()->description('Номер страницы, с единицы.'),
             'per_page' => $schema->integer()->description('Размер страницы, до 50. По умолчанию 25.'),

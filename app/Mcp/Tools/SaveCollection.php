@@ -38,7 +38,7 @@ class SaveCollection extends Tool
             $collection = Collection::query()->where('user_id', $userId)->find($id);
 
             if ($collection === null) {
-                return Response::error("Подборки с id {$id} у вас нет.");
+                return Response::error(Presenter::notOwnCollectionError($request->user(), $id));
             }
         } else {
             $collection = new Collection(['user_id' => $userId]);

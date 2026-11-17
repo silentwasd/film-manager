@@ -27,6 +27,8 @@ Route::prefix('management')->group(function () {
         Route::apiResource('franchises', Management\FranchiseController::class)->except(['show']);
 
         Route::apiResource('collections', Management\CollectionController::class);
+        Route::post('collections/{collection}/save', [Management\CollectionSaveController::class, 'store']);
+        Route::delete('collections/{collection}/save', [Management\CollectionSaveController::class, 'destroy']);
         Route::post('collections/{collection}/films', [Management\CollectionFilmController::class, 'store']);
         Route::put('collections/{collection}/films/reorder', [Management\CollectionFilmController::class, 'reorder']);
         Route::patch('collections/{collection}/films/{film}', [Management\CollectionFilmController::class, 'update']);

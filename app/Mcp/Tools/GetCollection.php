@@ -17,7 +17,10 @@ use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
 #[Name('get_collection')]
 #[Title('Состав подборки')]
-#[Description('Подборка по id со списком фильмов в заданном порядке и заметками к ним.')]
+#[Description(
+    'Подборка по id со списком фильмов в заданном порядке и заметками к ним. '.
+    'is_mine — своя, saved — чужая, добавленная пользователем к себе.'
+)]
 #[IsReadOnly]
 #[IsIdempotent]
 class GetCollection extends Tool
@@ -42,7 +45,7 @@ class GetCollection extends Tool
 
         return Response::json([
             ...Presenter::collectionDetail($collection),
-            'is_mine' => $collection->user_id === $request->user()->getAuthIdentifier(),
+            ...Presenter::collectionRelation($collection, $request->user()->getAuthIdentifier()),
         ]);
     }
 

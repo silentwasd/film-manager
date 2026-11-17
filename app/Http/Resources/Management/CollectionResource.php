@@ -25,6 +25,16 @@ class CollectionResource extends JsonResource
             'films_count' => $this->whenCounted('films'),
             'films' => CollectionFilmResource::collection($this->whenLoaded('films')),
             'can_edit' => auth()->user()->can('update', $this->resource),
+            // Чужая коллекция в списке — добавленная к себе. Автор нужен,
+            // чтобы подписать строку; у своих он не отдаётся.
+            'is_own' => $this->user_id == auth()->id(),
+            'author' => $this->when(
+                $this->user_id != auth()->id() && $this->relationLoaded('user'),
+                fn () => [
+                    'name' => $this->user->name,
+                    'public_key' => $this->user->public_key,
+                ]
+            ),
         ];
     }
 }

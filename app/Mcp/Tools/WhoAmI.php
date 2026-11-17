@@ -40,6 +40,7 @@ class WhoAmI extends Tool
                 ->pluck('total', 'status')
                 ->all(),
             'collections' => Collection::query()->where('user_id', $id)->count(),
+            'saved_collections' => Collection::query()->listedFor($user)->where('user_id', '!=', $id)->count(),
         ]);
     }
 

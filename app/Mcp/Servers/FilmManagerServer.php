@@ -5,6 +5,7 @@ namespace App\Mcp\Servers;
 use App\Mcp\Prompts\WhatToWatch;
 use App\Mcp\Prompts\WatchlistDigest;
 use App\Mcp\Tools\AddFilmNote;
+use App\Mcp\Tools\BookmarkCollection;
 use App\Mcp\Tools\DeleteCollection;
 use App\Mcp\Tools\DeleteFilmNote;
 use App\Mcp\Tools\Fetch;
@@ -51,7 +52,10 @@ use Laravel\Mcp\Server\Attributes\Version;
 собирается посмотреть, вместе с его оценкой и отзывом; статус меняется через
 set_watch_status, оценка — через set_film_reaction. add_film_note пишет
 приватную заметку, видимую только автору. Подборки — list_collections,
-get_collection, save_collection, manage_collection_films.
+get_collection, save_collection, manage_collection_films. Чужую публичную
+или личную подборку можно добавить к себе (bookmark_collection): это закладка,
+а не копия — в list_collections она появится с is_mine=false, смотреть её
+можно, править нельзя, а remove убирает её только у пользователя.
 
 Оценка принимает четыре состояния, и путать их нельзя: 1 — понравилось,
 -1 — не понравилось, 0 — нейтрально (поставленная оценка, ни за ни против),
@@ -60,7 +64,7 @@ null — пользователь фильм не оценивал вовсе. �
 это другое, она в get_film в поле my.notes.
 
 Перед любой записью — set_watch_status, set_film_reaction, add_film_note,
-save_collection, manage_collection_films, удаления — сказать пользователю,
+save_collection, manage_collection_films, bookmark_collection, удаления — сказать пользователю,
 что именно будет сохранено, и дождаться согласия. Особенно это касается
 публичного отзыва и публикации подборки: их увидят посторонние.
 TEXT)]
@@ -105,6 +109,7 @@ class FilmManagerServer extends Server
         SaveCollection::class,
         ManageCollectionFilms::class,
         DeleteCollection::class,
+        BookmarkCollection::class,
     ];
 
     /**

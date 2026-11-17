@@ -9,6 +9,7 @@ use App\Models\Collection;
 use App\Services\ComposableTable\Paginable;
 use App\Services\ComposableTable\Searchable;
 use App\Services\ComposableTable\Sortable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -22,15 +23,23 @@ class CollectionController extends Controller
             ...$this->checkSearch(),
             ...$this->checkPage(),
             ...$this->checkSort(['id', 'name']),
+            // own — только свои (выбор коллекции для фильма), saved — только
+            // добавленные чужие; по умолчанию — всё вместе.
+            'scope' => 'nullable|string|in:own,saved',
         ]);
 
-        $query = $request->user()
-            ->collections()
-            ->with('user')
-            ->withCount('films')
-            ->getQuery();
+        $user = $request->user();
 
-        $this->applySearch($data, $query);
+        $query = Collection::query()
+            ->listedFor($user)
+            ->when(($data['scope'] ?? null) === 'own', fn (Builder $q) => $q->where('user_id', $user->id))
+            ->when(($data['scope'] ?? null) === 'saved', fn (Builder $q) => $q->where('user_id', '!=', $user->id))
+            ->with('user')
+            ->withCount('films');
+
+        // Поиск во вложенном where: applySearch ставит model_id через OR, и
+        // на верхнем уровне он вытащил бы чужие коллекции мимо listedFor.
+        $query->where(fn (Builder $q) => $this->applySearch($data, $q));
         $this->applySort($data, $query);
         $query->orderBy('id');
 
@@ -39,7 +48,7 @@ class CollectionController extends Controller
 
     public function show(Request $request, Collection $collection)
     {
-        if ($request->user()->cannot('update', $collection)) {
+        if ($request->user()->cannot('view', $collection)) {
             abort(403);
         }
 

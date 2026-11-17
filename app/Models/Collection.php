@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Collection extends Model
@@ -41,6 +42,33 @@ class Collection extends Model
     public function films(): HasMany
     {
         return $this->hasMany(CollectionFilm::class);
+    }
+
+    /** Пользователи, добавившие эту (чужую для них) коллекцию к себе. */
+    public function savers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'collection_saves')->withTimestamps();
+    }
+
+    /**
+     * Раздел «Коллекции» пользователя: свои любого уровня доступа плюс
+     * добавленные чужие. Чужая, которую автор потом скрыл, из списка пропадает,
+     * но закладка остаётся — вернёт автор доступ, вернётся и строка.
+     */
+    public function scopeListedFor(Builder $query, User $user): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->where('user_id', $user->id)
+            ->orWhere(fn (Builder $q) => $q
+                ->visible()
+                ->whereHas('savers', fn (Builder $q) => $q->whereKey($user->id))
+            )
+        );
+    }
+
+    public function isSavedBy(User $user): bool
+    {
+        return $this->savers()->whereKey($user->id)->exists();
     }
 
     /** Только то, что индексируется: страница + профиль + sitemap. */

@@ -40,7 +40,7 @@ class ManageCollectionFilms extends Tool
         $collection = Collection::query()->where('user_id', $userId)->find($data['collection_id']);
 
         if ($collection === null) {
-            return Response::error("Подборки с id {$data['collection_id']} у вас нет.");
+            return Response::error(Presenter::notOwnCollectionError($request->user(), $data['collection_id']));
         }
 
         $filmIds = array_values(array_unique($data['film_ids']));

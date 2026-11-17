@@ -190,6 +190,35 @@ class Presenter
     }
 
     /**
+     * Ошибка «подборки у вас нет» для инструментов записи. Если это чужая,
+     * добавленная к себе, — говорим прямо, иначе модель решит, что подборки
+     * не существует, и полезет её создавать.
+     */
+    public static function notOwnCollectionError(\App\Models\User $user, int $id): string
+    {
+        return $user->savedCollections()->whereKey($id)->exists()
+            ? "Подборка {$id} чужая: она добавлена к вам только для просмотра, править её может только автор."
+            : "Подборки с id {$id} у вас нет.";
+    }
+
+    /**
+     * Чья подборка для подключённого пользователя: своя (правится) или
+     * добавленная к себе чужая (только просмотр). saved берётся из
+     * withExists('savers as saved'), иначе — отдельным запросом.
+     *
+     * @return array{is_mine: bool, saved: bool}
+     */
+    public static function collectionRelation(Collection $collection, int|string $userId): array
+    {
+        $isMine = $collection->user_id == $userId;
+
+        $saved = ! $isMine && ($collection->getAttributes()['saved']
+            ?? $collection->savers()->whereKey($userId)->exists());
+
+        return ['is_mine' => $isMine, 'saved' => (bool) $saved];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function collectionDetail(Collection $collection): array

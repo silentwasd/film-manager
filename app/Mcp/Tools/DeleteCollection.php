@@ -17,7 +17,8 @@ use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 #[Title('Удалить подборку')]
 #[Description(
     'Удаляет свою подборку вместе с её составом. Сами фильмы каталога остаются. '.
-    'Отменить нельзя — обязательно подтвердить у пользователя.'
+    'Отменить нельзя — обязательно подтвердить у пользователя. Чужую подборку, '.
+    'добавленную к себе, этим не удалить — её убирает bookmark_collection с action=remove.'
 )]
 #[IsDestructive]
 #[IsIdempotent]
@@ -34,7 +35,11 @@ class DeleteCollection extends Tool
             ->find($data['id']);
 
         if ($collection === null) {
-            return Response::error("Подборки с id {$data['id']} у вас нет.");
+            $saved = $request->user()->savedCollections()->whereKey($data['id'])->exists();
+
+            return Response::error($saved
+                ? "Подборка {$data['id']} чужая, она только добавлена к вам. Убрать её из своих — bookmark_collection с action=remove; у автора она останется."
+                : "Подборки с id {$data['id']} у вас нет.");
         }
 
         $name = $collection->name;

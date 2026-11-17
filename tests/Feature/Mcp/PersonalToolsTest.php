@@ -5,6 +5,7 @@ namespace Tests\Feature\Mcp;
 use App\Enums\CollectionVisibility;
 use App\Mcp\Servers\FilmManagerServer;
 use App\Mcp\Tools\AddFilmNote;
+use App\Mcp\Tools\BookmarkCollection;
 use App\Mcp\Tools\DeleteCollection;
 use App\Mcp\Tools\DeleteFilmNote;
 use App\Mcp\Tools\GetCollection;
@@ -484,6 +485,109 @@ class PersonalToolsTest extends TestCase
             ->assertOk()
             ->assertSee('Чужая публичная')
             ->assertDontSee('Чужая скрытая');
+    }
+
+    public function test_bookmark_collection_adds_and_removes_foreign_collection(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $foreign = Collection::factory()->personal()->create(['name' => 'Чужая личная']);
+        $other->savedCollections()->attach($foreign);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(BookmarkCollection::class, ['id' => $foreign->id, 'action' => 'add'])
+            ->assertOk()
+            ->assertSee(['"added":true', 'Чужая личная']);
+
+        $this->assertDatabaseHas('collection_saves', ['user_id' => $user->id, 'collection_id' => $foreign->id]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(BookmarkCollection::class, ['id' => $foreign->id, 'action' => 'remove'])
+            ->assertOk()
+            ->assertSee('"removed":true');
+
+        $this->assertDatabaseMissing('collection_saves', ['user_id' => $user->id]);
+        $this->assertDatabaseHas('collection_saves', ['user_id' => $other->id]);
+        $this->assertDatabaseHas('collections', ['id' => $foreign->id]);
+    }
+
+    public function test_bookmark_collection_refuses_hidden_and_own(): void
+    {
+        $user = User::factory()->create();
+        $hidden = Collection::factory()->hidden()->create();
+        $own = Collection::factory()->public()->create(['user_id' => $user->id]);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(BookmarkCollection::class, ['id' => $hidden->id, 'action' => 'add'])
+            ->assertHasErrors();
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(BookmarkCollection::class, ['id' => $own->id, 'action' => 'add'])
+            ->assertHasErrors();
+
+        $this->assertDatabaseCount('collection_saves', 0);
+    }
+
+    public function test_list_collections_mine_includes_saved_with_flags(): void
+    {
+        $user = User::factory()->create();
+        Collection::factory()->create(['user_id' => $user->id, 'name' => 'Моя скрытая']);
+        $saved = Collection::factory()->public()->create(['name' => 'Добавленная чужая']);
+        Collection::factory()->public()->create(['name' => 'Просто чужая']);
+        $user->savedCollections()->attach($saved);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(ListCollections::class, [])
+            ->assertOk()
+            ->assertSee(['Моя скрытая', 'Добавленная чужая', '"is_mine":false', '"saved":true'])
+            ->assertDontSee('Просто чужая');
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(ListCollections::class, ['scope' => 'own'])
+            ->assertSee('Моя скрытая')
+            ->assertDontSee('Добавленная чужая');
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(ListCollections::class, ['scope' => 'saved'])
+            ->assertSee('Добавленная чужая')
+            ->assertDontSee('Моя скрытая');
+    }
+
+    public function test_saved_collection_stays_read_only_over_mcp(): void
+    {
+        $user = User::factory()->create();
+        $film = Film::factory()->create();
+        $saved = Collection::factory()->public()->create(['name' => 'Чужая']);
+        $user->savedCollections()->attach($saved);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(GetCollection::class, ['id' => $saved->id])
+            ->assertOk()
+            ->assertSee(['"is_mine":false', '"saved":true']);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(SaveCollection::class, ['id' => $saved->id, 'name' => 'Перехвачена'])
+            ->assertHasErrors()
+            ->assertSee('только для просмотра');
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(ManageCollectionFilms::class, [
+                'collection_id' => $saved->id,
+                'action' => 'add',
+                'film_ids' => [$film->id],
+            ])
+            ->assertHasErrors()
+            ->assertSee('только для просмотра');
+
+        $this->assertDatabaseCount('collection_films', 0);
+
+        FilmManagerServer::actingAs($user, 'mcp')
+            ->tool(DeleteCollection::class, ['id' => $saved->id])
+            ->assertHasErrors()
+            ->assertSee('bookmark_collection');
+
+        $this->assertDatabaseHas('collections', ['id' => $saved->id, 'name' => 'Чужая']);
+        $this->assertDatabaseHas('collection_saves', ['user_id' => $user->id]);
     }
 
     public function test_get_collection_hides_someone_elses_hidden_collection(): void
